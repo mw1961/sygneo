@@ -8,6 +8,7 @@ const PUBLIC_PATHS = [
   '/api/user/logout',
   '/api/admin/login',
   '/api/admin/logout',
+  '/login/client',
 ];
 
 export function middleware(req: NextRequest) {
