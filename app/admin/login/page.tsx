@@ -59,9 +59,22 @@ export default function AdminLoginPage() {
         <button
           type="submit"
           disabled={loading || password.length === 0}
-          style={{ padding: '13px 36px', border: '1px solid #8B7355', background: 'transparent', color: '#8B7355', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif', opacity: password.length === 0 ? 0.4 : 1 }}
+          style={{
+            width: '100%',
+            padding: '16px 36px',
+            border: 'none',
+            background: password.length === 0 ? '#C8BFB3' : '#8B7355',
+            color: '#FFFFFF',
+            fontSize: 13,
+            letterSpacing: '0.3em',
+            textTransform: 'uppercase',
+            cursor: password.length === 0 ? 'not-allowed' : 'pointer',
+            fontFamily: 'Helvetica, Arial, sans-serif',
+            fontWeight: 500,
+            transition: 'background 0.2s',
+          }}
         >
-          {loading ? 'Verifying...' : 'Enter'}
+          {loading ? 'Verifying...' : 'Enter Admin'}
         </button>
       </form>
     </main>
