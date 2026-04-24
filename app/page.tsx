@@ -62,7 +62,7 @@ export default function HomePage() {
     <main style={{ minHeight: '100vh', background: C.bg, color: C.text, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 24px', position: 'relative', fontFamily: 'Georgia, serif' }}>
 
       {/* Admin link */}
-      <a href="/admin/login" style={{ position: 'absolute', bottom: 20, right: 24, fontSize: 10, letterSpacing: '0.2em', color: C.border, textDecoration: 'none', textTransform: 'uppercase' }}>Admin</a>
+      <a href="/admin/login" style={{ position: 'absolute', top: 24, right: 32, fontSize: 11, letterSpacing: '0.25em', color: C.gold, textDecoration: 'none', textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif', border: `1px solid ${C.border}`, padding: '8px 18px' }}>Admin</a>
 
       {/* Logo */}
       <div style={{ marginBottom: 52, textAlign: 'center' }}>

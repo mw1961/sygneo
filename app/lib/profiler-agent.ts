@@ -16,22 +16,33 @@ export interface ProfilerQuestion {
 
 export const PROFILER_QUESTIONS: ProfilerQuestion[] = [
   {
-    id: 'origin',
+    id: 'lineageStart',
     step: 1,
+    question: 'Where does your lineage begin?',
+    hint: 'Choose how you want to root your seal — in history, or from this moment forward.',
+    type: 'select',
+    options: [
+      'From the past — my family has roots I want to honour',
+      'From now — I am starting a new lineage today',
+    ],
+  },
+  {
+    id: 'origin',
+    step: 2,
     question: 'Where does your family come from?',
-    hint: 'Country, region, or city — as specific as you like.',
+    hint: 'If rooting in history: name a country, region, or era (e.g. "Eastern Europe, 400 years ago"). If starting fresh: describe where you are now — a city, a country, a place that matters.',
     type: 'text',
   },
   {
     id: 'occupation',
-    step: 2,
-    question: 'What did your ancestors do?',
-    hint: 'Farmer, merchant, craftsman, sailor, scholar — any historical occupation.',
+    step: 3,
+    question: 'What defines this lineage\'s work or purpose?',
+    hint: 'Historic roots: an ancestral craft or trade (farmer, merchant, craftsman). New lineage: the pursuit or profession you want this seal to represent.',
     type: 'text',
   },
   {
     id: 'values',
-    step: 3,
+    step: 4,
     question: 'Choose 2–3 values that define your family.',
     hint: 'These become the soul of the seal.',
     type: 'multiselect',
@@ -43,7 +54,7 @@ export const PROFILER_QUESTIONS: ProfilerQuestion[] = [
   },
   {
     id: 'shape',
-    step: 4,
+    step: 5,
     question: 'Choose the geometric form of your seal.',
     hint: 'Circle = continuity & unity · Square = stability & order · Triangle = strength & direction',
     type: 'select',
@@ -51,7 +62,7 @@ export const PROFILER_QUESTIONS: ProfilerQuestion[] = [
   },
   {
     id: 'style',
-    step: 5,
+    step: 6,
     question: 'Choose a visual style.',
     hint: 'This sets the overall aesthetic language.',
     type: 'select',
@@ -59,7 +70,7 @@ export const PROFILER_QUESTIONS: ProfilerQuestion[] = [
   },
   {
     id: 'inkColor',
-    step: 6,
+    step: 7,
     question: 'Choose your ink color.',
     hint: 'The seal will be produced in a single solid color.',
     type: 'select',
