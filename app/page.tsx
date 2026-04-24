@@ -46,7 +46,8 @@ export default function HomePage() {
     : selectedOptions.length > 0 && (question?.type !== 'multiselect' || selectedOptions.length >= 2);
 
   return (
-    <main className="min-h-screen bg-[#0A0A0A] text-white flex flex-col items-center justify-center px-6 py-16">
+    <main className="min-h-screen bg-[#0A0A0A] text-white flex flex-col items-center justify-center px-6 py-16 relative">
+      <a href="/admin/login" className="absolute bottom-5 right-6 text-[10px] tracking-[0.2em] text-[#2a2a2a] hover:text-[#555] transition-colors uppercase">Admin</a>
 
       {/* Logo */}
       <div className="mb-12 text-center">
