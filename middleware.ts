@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createHmac } from 'crypto';
 
 const SESSION_SECRET = process.env.SESSION_SECRET ?? 'seal-dev-secret-2026';
 
-const ADMIN_TOKEN = createHmac('sha256', SESSION_SECRET).update('admin').digest('hex');
-const USER_TOKEN  = createHmac('sha256', SESSION_SECRET).update('user:123').digest('hex');
+async function hmac(data: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', enc.encode(SESSION_SECRET),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(data));
+  return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
-const ADMIN_PATHS = ['/admin'];
+const ADMIN_PATHS  = ['/admin'];
 const PUBLIC_PATHS = [
   '/login',
   '/login/client',
@@ -17,27 +24,30 @@ const PUBLIC_PATHS = [
   '/api/admin/logout',
 ];
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   const isPublic = PUBLIC_PATHS.some(p => pathname.startsWith(p));
   if (isPublic) return NextResponse.next();
 
+  const [adminToken, userToken] = await Promise.all([
+    hmac('admin'),
+    hmac('user:123'),
+  ]);
+
   const isAdminPath = ADMIN_PATHS.some(p => pathname.startsWith(p));
 
   if (isAdminPath) {
-    const token = req.cookies.get('seal_admin')?.value;
-    if (token !== ADMIN_TOKEN) {
+    if (req.cookies.get('seal_admin')?.value !== adminToken) {
       return NextResponse.redirect(new URL('/admin/login', req.url));
     }
     return NextResponse.next();
   }
 
-  // All other routes require valid user OR admin token
-  const userToken  = req.cookies.get('seal_user')?.value;
-  const adminToken = req.cookies.get('seal_admin')?.value;
+  const hasAdmin = req.cookies.get('seal_admin')?.value === adminToken;
+  const hasUser  = req.cookies.get('seal_user')?.value  === userToken;
 
-  if (userToken !== USER_TOKEN && adminToken !== ADMIN_TOKEN) {
+  if (!hasAdmin && !hasUser) {
     return NextResponse.redirect(new URL('/login', req.url));
   }
 
