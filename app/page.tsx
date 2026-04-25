@@ -115,7 +115,7 @@ export default function HomePage() {
   if (phase === 'generating') {
     return (
       <main style={{ minHeight: '100vh', background: C.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'Georgia, serif', color: C.text }}>
-        <h1 style={{ fontSize: 34, fontWeight: 300, letterSpacing: '0.45em', margin: 0 }}>SEAL</h1>
+        <h1 style={{ fontSize: 34, fontWeight: 300, letterSpacing: '0.45em', margin: 0 }}>SYGNEO</h1>
         <div style={{ width: 40, height: 1, background: C.gold, margin: '12px auto 32px' }} />
         <p style={{ fontSize: 12, letterSpacing: '0.3em', color: C.gold, textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>
           Crafting your heritage mark...
@@ -141,7 +141,7 @@ export default function HomePage() {
 
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <h1 style={{ fontSize: 30, fontWeight: 300, letterSpacing: '0.45em', margin: 0 }}>SEAL</h1>
+            <h1 style={{ fontSize: 30, fontWeight: 300, letterSpacing: '0.45em', margin: 0 }}>SYGNEO</h1>
             <div style={{ width: 40, height: 1, background: C.gold, margin: '10px auto 8px' }} />
             <p style={{ fontSize: 10, letterSpacing: '0.3em', color: C.gold, textTransform: 'uppercase', margin: 0, fontFamily: 'Helvetica, Arial, sans-serif' }}>
               Choose your heritage mark
@@ -244,9 +244,9 @@ export default function HomePage() {
       <a href="/admin/login" style={{ position: 'absolute', top: 24, right: 32, fontSize: 11, letterSpacing: '0.25em', color: C.gold, textDecoration: 'none', textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif', border: `1px solid ${C.border}`, padding: '8px 18px' }}>Admin</a>
 
       <div style={{ marginBottom: 52, textAlign: 'center' }}>
-        <h1 style={{ fontSize: 38, fontWeight: 300, letterSpacing: '0.45em', color: C.text, margin: 0 }}>SEAL</h1>
+        <h1 style={{ fontSize: 38, fontWeight: 300, letterSpacing: '0.45em', color: C.text, margin: 0 }}>SYGNEO</h1>
         <div style={{ width: 40, height: 1, background: C.gold, margin: '10px auto 8px' }} />
-        <p style={{ fontSize: 10, letterSpacing: '0.32em', color: C.gold, textTransform: 'uppercase', margin: 0, fontFamily: 'Helvetica, Arial, sans-serif' }}>Heritage Seal System</p>
+        <p style={{ fontSize: 10, letterSpacing: '0.32em', color: C.gold, textTransform: 'uppercase', margin: 0, fontFamily: 'Helvetica, Arial, sans-serif' }}>Heritage · Legacy · Trust</p>
       </div>
 
       <div style={{ width: '100%', maxWidth: 520 }}>

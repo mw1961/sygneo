@@ -12,7 +12,7 @@ export default async function AdminDashboard() {
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 52, borderBottom: '1px solid #DDD8D0', paddingBottom: 24 }}>
           <div>
-            <h1 style={{ fontSize: 30, fontWeight: 300, letterSpacing: '0.4em', margin: 0 }}>SEAL</h1>
+            <h1 style={{ fontSize: 30, fontWeight: 300, letterSpacing: '0.4em', margin: 0 }}>SYGNEO</h1>
             <p style={{ fontSize: 10, letterSpacing: '0.3em', color: '#8B7355', textTransform: 'uppercase', margin: '6px 0 0', fontFamily: 'Helvetica, Arial, sans-serif' }}>Admin Dashboard</p>
           </div>
           <form action="/api/admin/logout" method="POST">

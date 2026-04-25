@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320" width="400" height="320">
+
+  <!-- Background -->
+  <rect width="400" height="320" fill="#F8F5F0"/>
+
+  <!-- ── Emblem Mark ── -->
+
+  <!-- Outer ring -->
+  <circle cx="200" cy="130" r="82" fill="none" stroke="#8B7355" stroke-width="2"/>
+
+  <!-- Inner ring -->
+  <circle cx="200" cy="130" r="72" fill="none" stroke="#8B7355" stroke-width="0.7" opacity="0.6"/>
+
+  <!-- Outer tick marks (12 positions, like a seal) -->
+  <g stroke="#8B7355" stroke-width="1.2" opacity="0.5">
+    <line x1="200" y1="49"  x2="200" y2="57"/>
+    <line x1="241" y1="60"  x2="237" y2="67"/>
+    <line x1="271" y1="89"  x2="265" y2="93"/>
+    <line x1="282" y1="130" x2="274" y2="130"/>
+    <line x1="271" y1="171" x2="265" y2="167"/>
+    <line x1="241" y1="200" x2="237" y2="193"/>
+    <line x1="200" y1="211" x2="200" y2="203"/>
+    <line x1="159" y1="200" x2="163" y2="193"/>
+    <line x1="129" y1="171" x2="135" y2="167"/>
+    <line x1="118" y1="130" x2="126" y2="130"/>
+    <line x1="129" y1="89"  x2="135" y2="93"/>
+    <line x1="159" y1="60"  x2="163" y2="67"/>
+  </g>
+
+  <!-- Central geometric mark — layered diamond/rhombus (3 layers = physical + AI + blockchain) -->
+
+  <!-- Outer diamond -->
+  <polygon points="200,72 248,130 200,188 152,130"
+    fill="none" stroke="#8B7355" stroke-width="1.8"/>
+
+  <!-- Middle diamond (rotated 45°) -->
+  <rect x="172" y="102" width="56" height="56" transform="rotate(0 200 130)"
+    fill="none" stroke="#8B7355" stroke-width="1.2"/>
+
+  <!-- Inner diamond -->
+  <polygon points="200,108 222,130 200,152 178,130"
+    fill="none" stroke="#8B7355" stroke-width="1.4"/>
+
+  <!-- Cross hairlines -->
+  <line x1="200" y1="72" x2="200" y2="188" stroke="#8B7355" stroke-width="0.6" opacity="0.35"/>
+  <line x1="152" y1="130" x2="248" y2="130" stroke="#8B7355" stroke-width="0.6" opacity="0.35"/>
+
+  <!-- Center point -->
+  <circle cx="200" cy="130" r="4" fill="#8B7355"/>
+  <circle cx="200" cy="130" r="8" fill="none" stroke="#8B7355" stroke-width="1"/>
+
+  <!-- ── Wordmark ── -->
+
+  <!-- SYGNEO -->
+  <text x="200" y="244"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="21"
+    font-weight="400"
+    letter-spacing="11"
+    fill="#1C1A17"
+    text-anchor="middle">SYGNEO</text>
+
+  <!-- Rule -->
+  <line x1="145" y1="256" x2="255" y2="256" stroke="#8B7355" stroke-width="0.8"/>
+
+  <!-- Subtitle -->
+  <text x="200" y="274"
+    font-family="Helvetica, Arial, sans-serif"
+    font-size="7.5"
+    font-weight="400"
+    letter-spacing="3.5"
+    fill="#8B7355"
+    text-anchor="middle">HERITAGE · LEGACY · TRUST</text>
+
+</svg>
