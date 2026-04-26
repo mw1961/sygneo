@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 340">
+  <rect width="500" height="340" fill="#F8F5F0"/>
+
+  <!-- CONCEPT 2: "The Lineage" — 3 ריבועים מקוננים מסובבים, מייצג דורות -->
+
+  <!-- Square 1 — outermost, 0° -->
+  <rect x="192" y="57" width="116" height="116"
+    fill="none" stroke="#1C1A17" stroke-width="3"/>
+
+  <!-- Square 2 — rotated 15° -->
+  <rect x="209" y="74" width="82" height="82"
+    transform="rotate(15 250 115)"
+    fill="none" stroke="#1C1A17" stroke-width="2"/>
+
+  <!-- Square 3 — rotated 30° -->
+  <rect x="226" y="91" width="48" height="48"
+    transform="rotate(30 250 115)"
+    fill="none" stroke="#8B7355" stroke-width="2.5"/>
+
+  <!-- Center -->
+  <circle cx="250" cy="115" r="4" fill="#8B7355"/>
+
+  <!-- Wordmark -->
+  <text x="250" y="222"
+    font-family="Georgia, serif" font-size="28" font-weight="400"
+    letter-spacing="14" fill="#1C1A17" text-anchor="middle">SYGNEO</text>
+  <line x1="178" y1="236" x2="322" y2="236" stroke="#8B7355" stroke-width="1"/>
+  <text x="250" y="254"
+    font-family="Helvetica, Arial, sans-serif" font-size="8" letter-spacing="4"
+    fill="#8B7355" text-anchor="middle">HERITAGE · LEGACY · TRUST</text>
+
+  <!-- Label -->
+  <text x="250" y="328" font-family="Helvetica, Arial, sans-serif" font-size="9"
+    fill="#B0A898" text-anchor="middle" letter-spacing="2">CONCEPT 02 — THE LINEAGE</text>
+</svg>
