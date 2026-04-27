@@ -86,30 +86,46 @@ function mazePattern(rng: () => number, ox: number, oy: number, w: number, h: nu
   return segs.join(' ');
 }
 
-// ── Organic: Sparse topographic rings (5-7, well-spaced, gentle wave) ────────
+// ── Organic: Tilted elliptical topographic rings (no two rings identical) ────
 
 function organicPattern(rng: () => number, cx: number, cy: number, r: number): string {
   const paths: string[] = [];
-  const rings = 5 + Math.floor(rng() * 3); // 5–7 rings only
-  const PTS = 72;
+  const rings = 5 + Math.floor(rng() * 3);
+  const PTS   = 72;
+  const gap   = (r * 0.92) / (rings + 1);
+
+  // Whole pattern shifts slightly off-center — outer rings drift less
+  const driftX = (rng() - 0.5) * r * 0.18;
+  const driftY = (rng() - 0.5) * r * 0.18;
 
   for (let ring = 1; ring <= rings; ring++) {
-    const baseR = (ring / (rings + 1)) * r * 0.92; // never reach edge, well-spaced
-    // Amplitude: at most 15% of gap between rings — no overlapping
-    const gap = r * 0.92 / (rings + 1);
-    const amp = gap * (0.20 + rng() * 0.20);
-    const freq1 = 2 + Math.floor(rng() * 4);
-    const freq2 = 1 + Math.floor(rng() * 3);
-    const ph1   = rng() * Math.PI * 2;
-    const ph2   = rng() * Math.PI * 2;
+    const t      = ring / (rings + 1);
+    const baseR  = t * r * 0.92;
+    const amp    = gap * (0.22 + rng() * 0.28);
+    const freq1  = 2 + Math.floor(rng() * 4);
+    const freq2  = 1 + Math.floor(rng() * 3);
+    const ph1    = rng() * Math.PI * 2;
+    const ph2    = rng() * Math.PI * 2;
+    // Each ring: unique ellipse aspect + tilt
+    const aspect = 0.72 + rng() * 0.56;   // 0.72–1.28
+    const tilt   = rng() * Math.PI;
+    // Center drifts inward as rings shrink
+    const rcx = cx + driftX * (1 - t);
+    const rcy = cy + driftY * (1 - t);
 
     const pts: [number, number][] = [];
     for (let i = 0; i < PTS; i++) {
-      const a  = (i / PTS) * Math.PI * 2;
-      const pr = baseR
-        + Math.sin(a * freq1 + ph1) * amp * 0.65
-        + Math.sin(a * freq2 + ph2) * amp * 0.35;
-      pts.push([cx + Math.cos(a) * pr, cy + Math.sin(a) * pr]);
+      const a    = (i / PTS) * Math.PI * 2;
+      const wave = Math.sin(a * freq1 + ph1) * amp * 0.65
+                 + Math.sin(a * freq2 + ph2) * amp * 0.35;
+      const pr   = baseR + wave;
+      // Ellipse + tilt
+      const ex   =  Math.cos(a) * pr;
+      const ey   =  Math.sin(a) * pr * aspect;
+      pts.push([
+        rcx + ex * Math.cos(tilt) - ey * Math.sin(tilt),
+        rcy + ex * Math.sin(tilt) + ey * Math.cos(tilt),
+      ]);
     }
 
     let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
