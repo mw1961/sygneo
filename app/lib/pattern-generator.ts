@@ -86,44 +86,62 @@ function mazePattern(rng: () => number, ox: number, oy: number, w: number, h: nu
   return segs.join(' ');
 }
 
-// ── Organic: Flowing curves (fingerprint / brain-fold texture) ────────────────
+// ── Organic: Concentric wavy rings (fingerprint / topographic) ───────────────
 
-function organicPattern(rng: () => number, cx: number, cy: number, r: number): string {
-  const strokes: string[] = [];
-  const count = 22 + Math.floor(rng() * 8);
+function wavyRings(rng: () => number, cx: number, cy: number, maxR: number, ringCount: number): string {
+  const paths: string[] = [];
+  const PTS = 64;
 
-  for (let i = 0; i < count; i++) {
-    const angle = rng() * Math.PI * 2;
-    const dist  = rng() * r * 0.78;
-    const sx = cx + Math.cos(angle) * dist;
-    const sy = cy + Math.sin(angle) * dist;
-    const len = r * 0.12 + rng() * r * 0.22;
-    const dir = angle + (rng() - 0.5) * Math.PI * 1.4;
-    const ex = sx + Math.cos(dir) * len;
-    const ey = sy + Math.sin(dir) * len;
-    const bend = (rng() - 0.5) * 1.2;
-    const cp1x = sx + Math.cos(dir + bend) * len * 0.35;
-    const cp1y = sy + Math.sin(dir + bend) * len * 0.35;
-    const cp2x = ex + Math.cos(dir - bend) * len * 0.35;
-    const cp2y = ey + Math.sin(dir - bend) * len * 0.35;
-    strokes.push(
-      `M${sx.toFixed(1)},${sy.toFixed(1)} C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${ex.toFixed(1)},${ey.toFixed(1)}`
-    );
+  for (let ring = 1; ring <= ringCount; ring++) {
+    const baseR = (ring / ringCount) * maxR;
+    const scale = baseR * (0.07 + rng() * 0.06);
+    const freq1 = 2 + Math.floor(rng() * 5);
+    const freq2 = 1 + Math.floor(rng() * 3);
+    const ph1   = rng() * Math.PI * 2;
+    const ph2   = rng() * Math.PI * 2;
+
+    const pts: [number, number][] = [];
+    for (let i = 0; i < PTS; i++) {
+      const a = (i / PTS) * Math.PI * 2;
+      const pr = baseR + Math.sin(a * freq1 + ph1) * scale * 0.6
+                       + Math.sin(a * freq2 + ph2) * scale * 0.4;
+      pts.push([cx + Math.cos(a) * pr, cy + Math.sin(a) * pr]);
+    }
+
+    // Catmull-Rom → Cubic Bezier closed path
+    let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+    for (let i = 0; i < PTS; i++) {
+      const p0 = pts[(i - 1 + PTS) % PTS];
+      const p1 = pts[i];
+      const p2 = pts[(i + 1) % PTS];
+      const p3 = pts[(i + 2) % PTS];
+      const cp1x = p1[0] + (p2[0] - p0[0]) / 6;
+      const cp1y = p1[1] + (p2[1] - p0[1]) / 6;
+      const cp2x = p2[0] - (p3[0] - p1[0]) / 6;
+      const cp2y = p2[1] - (p3[1] - p1[1]) / 6;
+      d += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+    }
+    d += ' Z';
+    paths.push(d);
   }
-  return strokes.join(' ');
+  return paths.join(' ');
 }
 
-// ── Hybrid: Angular outer ring + Organic inner core ───────────────────────────
+function organicPattern(rng: () => number, cx: number, cy: number, r: number): string {
+  const rings = 12 + Math.floor(rng() * 5);
+  return wavyRings(rng, cx, cy, r * 0.90, rings);
+}
+
+// ── Hybrid: Angular outer segments + fingerprint inner rings ─────────────────
 
 function hybridPattern(rng: () => number, cx: number, cy: number, r: number): string {
-  // Outer ring: concentric angular segments
   const outerParts: string[] = [];
   const segments = 12 + Math.floor(rng() * 6);
   for (let i = 0; i < segments; i++) {
     const a1 = (i / segments) * Math.PI * 2;
     const a2 = ((i + 0.7 + rng() * 0.25) / segments) * Math.PI * 2;
     const r1 = r * 0.55 + rng() * r * 0.1;
-    const r2 = r * 0.78 + rng() * r * 0.06;
+    const r2 = r * 0.80 + rng() * r * 0.06;
     outerParts.push(
       `M${(cx + Math.cos(a1) * r1).toFixed(1)},${(cy + Math.sin(a1) * r1).toFixed(1)} ` +
       `L${(cx + Math.cos(a1) * r2).toFixed(1)},${(cy + Math.sin(a1) * r2).toFixed(1)} ` +
@@ -132,27 +150,10 @@ function hybridPattern(rng: () => number, cx: number, cy: number, r: number): st
     );
   }
 
-  // Inner core: organic swirls
-  const innerCount = 14 + Math.floor(rng() * 6);
-  const innerParts: string[] = [];
-  for (let i = 0; i < innerCount; i++) {
-    const angle = rng() * Math.PI * 2;
-    const dist  = rng() * r * 0.45;
-    const sx = cx + Math.cos(angle) * dist;
-    const sy = cy + Math.sin(angle) * dist;
-    const len = r * 0.1 + rng() * r * 0.16;
-    const dir = angle + (rng() - 0.5) * Math.PI;
-    const ex = sx + Math.cos(dir) * len;
-    const ey = sy + Math.sin(dir) * len;
-    const b = (rng() - 0.5) * 0.9;
-    innerParts.push(
-      `M${sx.toFixed(1)},${sy.toFixed(1)} ` +
-      `C${(sx + Math.cos(dir+b)*len*0.4).toFixed(1)},${(sy + Math.sin(dir+b)*len*0.4).toFixed(1)} ` +
-      `${(ex + Math.cos(dir-b)*len*0.3).toFixed(1)},${(ey + Math.sin(dir-b)*len*0.3).toFixed(1)} ` +
-      `${ex.toFixed(1)},${ey.toFixed(1)}`
-    );
-  }
-  return [...outerParts, ...innerParts].join(' ');
+  const innerRings = 7 + Math.floor(rng() * 4);
+  const inner = wavyRings(rng, cx, cy, r * 0.46, innerRings);
+
+  return outerParts.join(' ') + ' ' + inner;
 }
 
 // ── Shape clips and borders ───────────────────────────────────────────────────
