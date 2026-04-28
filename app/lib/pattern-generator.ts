@@ -201,11 +201,11 @@ export function renderSeal(
 
 // ── Generate all 9 ────────────────────────────────────────────────────────────
 
-export function renderAllNine(hash: string, color: string, variant = 0): {
+export function renderAllFour(hash: string, color: string, variant = 0): {
   pattern: PatternType; shape: ShapeType; svg: string;
 }[] {
-  const patterns: PatternType[] = ['angular', 'organic', 'hybrid'];
-  const shapes:   ShapeType[]   = ['circle',  'square',  'triangle'];
+  const patterns: PatternType[] = ['angular', 'organic'];
+  const shapes:   ShapeType[]   = ['circle',  'square'];
   const results: { pattern: PatternType; shape: ShapeType; svg: string }[] = [];
 
   for (const shape of shapes) {

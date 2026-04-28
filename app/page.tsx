@@ -273,12 +273,12 @@ export default function HomePage() {
 
   // ── Results ──────────────────────────────────────────────────────────────────
   if (phase === 'results') {
-    const shapes   = ['circle', 'square', 'triangle'];
-    const patterns = ['angular', 'organic', 'hybrid'];
+    const shapes   = ['circle', 'square'];
+    const patterns = ['angular', 'organic'];
 
     return (
       <main style={{ minHeight: '100vh', background: C.bg, padding: '40px 24px', fontFamily: 'Georgia, serif', color: C.text }}>
-        <div style={{ maxWidth: 720, margin: '0 auto' }}>
+        <div style={{ maxWidth: 560, margin: '0 auto' }}>
 
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: 36 }}>
@@ -299,7 +299,7 @@ export default function HomePage() {
           </div>
 
           {/* Pattern type labels */}
-          <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '70px 1fr 1fr', gap: 10, marginBottom: 8 }}>
             <div />
             {patterns.map(p => (
               <div key={p} style={{ textAlign: 'center', fontSize: 9, letterSpacing: '0.2em', color: C.muted, textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif', paddingBottom: 4 }}>
@@ -308,24 +308,21 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* 3×3 grid */}
+          {/* 2×2 grid */}
           {shapes.map((shape, si) => (
-            <div key={shape} style={{ display: 'grid', gridTemplateColumns: '80px 1fr 1fr 1fr', gap: 8, marginBottom: 8, alignItems: 'center' }}>
-              {/* Shape label */}
+            <div key={shape} style={{ display: 'grid', gridTemplateColumns: '70px 1fr 1fr', gap: 10, marginBottom: 10, alignItems: 'center' }}>
               <div style={{ fontSize: 9, letterSpacing: '0.15em', color: C.muted, textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif', textAlign: 'right', paddingRight: 12 }}>
                 {SHAPE_LABELS[shape]}
               </div>
-
-              {/* 3 pattern cells */}
               {patterns.map((pattern, pi) => {
-                const idx = si * 3 + pi;
+                const idx = si * 2 + pi;
                 const seal = seals[idx];
                 const isSelected = chosen === idx;
                 return (
                   <button key={pattern} onClick={() => setChosen(isSelected ? null : idx)}
-                    style={{ border: `2px solid ${isSelected ? C.gold : C.border}`, background: isSelected ? 'rgba(139,115,85,0.06)' : C.surface, padding: 10, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, transition: 'all 0.2s', position: 'relative' }}>
+                    style={{ border: `2px solid ${isSelected ? C.gold : C.border}`, background: isSelected ? 'rgba(139,115,85,0.06)' : C.surface, padding: 12, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, transition: 'all 0.2s' }}>
                     {seal && (
-                      <div style={{ width: 130, height: 130 }} dangerouslySetInnerHTML={{ __html: seal.svg }} />
+                      <div style={{ width: 160, height: 160 }} dangerouslySetInnerHTML={{ __html: seal.svg }} />
                     )}
                     {isSelected && (
                       <span style={{ fontSize: 9, color: C.gold, letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>✓ Selected</span>
