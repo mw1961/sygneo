@@ -59,6 +59,8 @@ export default function HomePage() {
   const [error, setError]                     = useState('');
   const [saving, setSaving]                   = useState(false);
   const [savedId, setSavedId]                 = useState('');
+  const [customInput, setCustomInput]         = useState('');
+  const [customPending, setCustomPending]     = useState('');
 
   const question: ProfilerQuestion | undefined = QUESTIONS[step];
   const isLastStep = step === QUESTIONS.length - 1;
@@ -66,6 +68,8 @@ export default function HomePage() {
   const minSelect = question?.min ?? (question?.type === 'multiselect' ? 2 : 1);
   const canProceed = question?.type === 'text'
     ? currentText.trim().length > 0
+    : question?.type === 'dropdown'
+    ? selectedOptions.length > 0 || customInput.trim().length > 0
     : selectedOptions.length >= minSelect;
 
   function toggleOption(opt: string) {
@@ -114,6 +118,7 @@ export default function HomePage() {
   async function handleNext() {
     if (!question) return;
     const value = question.type === 'multiselect' ? selectedOptions
+                : question.type === 'dropdown'    ? (customInput.trim() || selectedOptions[0] || '')
                 : question.type === 'select'      ? selectedOptions[0] ?? ''
                 : currentText;
 
@@ -121,6 +126,8 @@ export default function HomePage() {
     setAnswers(updated);
     setCurrentText('');
     setSelectedOptions([]);
+    setCustomInput('');
+    setCustomPending('');
 
     if (isLastStep) {
       await generateSeals(updated, color);
@@ -174,6 +181,7 @@ export default function HomePage() {
     setStep(0); setAnswers({}); setCurrentText(''); setSelectedOptions([]);
     setPhase('questionnaire'); setSeals([]); setChosen(null); setNotes('');
     setError(''); setSavedId(''); setColor('#000000');
+    setCustomInput(''); setCustomPending('');
   }
 
   // ── Generating ──────────────────────────────────────────────────────────────
@@ -346,17 +354,29 @@ export default function HomePage() {
         )}
 
         {question?.type === 'dropdown' && (
-          <div style={{ position: 'relative' }}>
-            <select
-              value={selectedOptions[0] ?? ''}
-              onChange={e => setSelectedOptions(e.target.value ? [e.target.value] : [])}
-              style={{ width: '100%', background: C.surface, border: `1px solid ${selectedOptions[0] ? C.borderAct : C.border}`, color: selectedOptions[0] ? C.text : C.muted, fontSize: 15, padding: '14px 40px 14px 16px', outline: 'none', fontFamily: 'Georgia, serif', appearance: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
-              <option value="">— Select a country —</option>
-              {question.options?.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-            <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: C.muted, fontSize: 12 }}>▾</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ position: 'relative' }}>
+              <select
+                value={customInput.trim() ? '' : (selectedOptions[0] ?? '')}
+                onChange={e => { setSelectedOptions(e.target.value ? [e.target.value] : []); setCustomInput(''); }}
+                style={{ width: '100%', background: C.surface, border: `1px solid ${(selectedOptions[0] && !customInput.trim()) ? C.borderAct : C.border}`, color: (selectedOptions[0] && !customInput.trim()) ? C.text : C.muted, fontSize: 15, padding: '14px 40px 14px 16px', outline: 'none', fontFamily: 'Georgia, serif', appearance: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
+                <option value="">— Select a country —</option>
+                {question.options?.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+              <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: C.muted, fontSize: 12 }}>▾</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 10, color: C.muted, letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif', whiteSpace: 'nowrap' }}>Or type:</span>
+              <input
+                type="text"
+                value={customInput}
+                onChange={e => { setCustomInput(e.target.value); if (e.target.value.trim()) setSelectedOptions([]); }}
+                placeholder="e.g. Catalonia, Yemen 1800s..."
+                style={{ flex: 1, background: 'transparent', border: 'none', borderBottom: `1px solid ${customInput.trim() ? C.borderAct : C.border}`, color: C.text, fontSize: 15, paddingBottom: 8, outline: 'none', fontFamily: 'Georgia, serif' }}
+              />
+            </div>
           </div>
         )}
 
@@ -382,13 +402,42 @@ export default function HomePage() {
             {question.type === 'multiselect' && !question.max && (
               <p style={{ fontSize: 11, color: C.muted, marginTop: 4, fontFamily: 'Helvetica, Arial, sans-serif', letterSpacing: '0.1em' }}>Select 2–3 values</p>
             )}
+            {question.type === 'multiselect' && question.max && (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
+                <span style={{ fontSize: 10, color: C.muted, letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif', whiteSpace: 'nowrap' }}>Or add:</span>
+                <input
+                  type="text"
+                  value={customPending}
+                  onChange={e => setCustomPending(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && customPending.trim() && selectedOptions.length < (question?.max ?? 3)) {
+                      setSelectedOptions(prev => [...prev, customPending.trim()]);
+                      setCustomPending('');
+                    }
+                  }}
+                  placeholder="Custom occupation..."
+                  style={{ flex: 1, background: 'transparent', border: 'none', borderBottom: `1px solid ${customPending.trim() ? C.borderAct : C.border}`, color: C.text, fontSize: 14, paddingBottom: 6, outline: 'none', fontFamily: 'Georgia, serif' }}
+                />
+                <button
+                  onClick={() => {
+                    if (customPending.trim() && selectedOptions.length < (question?.max ?? 3)) {
+                      setSelectedOptions(prev => [...prev, customPending.trim()]);
+                      setCustomPending('');
+                    }
+                  }}
+                  disabled={!customPending.trim() || selectedOptions.length >= (question?.max ?? 3)}
+                  style={{ padding: '6px 14px', border: `1px solid ${C.border}`, background: 'transparent', color: C.gold, fontSize: 11, letterSpacing: '0.15em', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif', textTransform: 'uppercase' }}>
+                  + Add
+                </button>
+              </div>
+            )}
           </div>
         )}
 
         {error && <p style={{ color: '#A0522D', fontSize: 13, marginTop: 16 }}>{error}</p>}
 
         {step > 0 && (
-          <button onClick={() => { setStep(s => s - 1); setCurrentText(''); setSelectedOptions([]); }}
+          <button onClick={() => { setStep(s => s - 1); setCurrentText(''); setSelectedOptions([]); setCustomInput(''); setCustomPending(''); }}
             style={{ marginTop: 24, marginRight: 16, padding: '10px 20px', border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
             ← Back
           </button>
