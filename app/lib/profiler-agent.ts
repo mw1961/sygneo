@@ -10,8 +10,10 @@ export interface ProfilerQuestion {
   step: number;
   question: string;
   hint: string;
-  type: 'text' | 'select' | 'multiselect';
+  type: 'text' | 'select' | 'multiselect' | 'dropdown';
   options?: string[];
+  min?: number;
+  max?: number;
 }
 
 export const PROFILER_QUESTIONS: ProfilerQuestion[] = [
@@ -30,15 +32,63 @@ export const PROFILER_QUESTIONS: ProfilerQuestion[] = [
     id: 'origin',
     step: 2,
     question: 'Where does your family come from?',
-    hint: 'If rooting in history: name a country, region, or era (e.g. "Eastern Europe, 400 years ago"). If starting fresh: describe where you are now — a city, a country, a place that matters.',
-    type: 'text',
+    hint: 'Choose the country of origin — the land your lineage is rooted in.',
+    type: 'dropdown',
+    options: [
+      'Afghanistan','Algeria','Angola','Argentina','Armenia','Australia','Austria',
+      'Azerbaijan','Belarus','Belgium','Bolivia','Bosnia','Brazil','Bulgaria',
+      'Cambodia','Canada','Chile','China','Colombia','Croatia','Cuba',
+      'Czech Republic','Denmark','Ecuador','Egypt','Ethiopia','Finland','France',
+      'Georgia','Germany','Ghana','Greece','Guatemala','Hungary',
+      'India','Indonesia','Iran','Iraq','Ireland','Israel','Italy',
+      'Japan','Jordan','Kazakhstan','Kenya','Kuwait','Latvia','Lebanon',
+      'Libya','Lithuania','Malaysia','Mexico','Moldova','Morocco',
+      'Netherlands','New Zealand','Nigeria','Norway',
+      'Pakistan','Peru','Philippines','Poland','Portugal',
+      'Romania','Russia','Saudi Arabia','Serbia','Slovakia',
+      'South Africa','South Korea','Spain','Sweden','Switzerland',
+      'Syria','Thailand','Tunisia','Turkey','Uganda',
+      'Ukraine','United Kingdom','United States','Uruguay',
+      'Uzbekistan','Venezuela','Vietnam','Yemen',
+    ],
   },
   {
     id: 'occupation',
     step: 3,
-    question: 'What defines this lineage\'s work or purpose?',
-    hint: 'Historic roots: an ancestral craft or trade (farmer, merchant, craftsman). New lineage: the pursuit or profession you want this seal to represent.',
-    type: 'text',
+    question: 'What work defined your family across generations?',
+    hint: 'Select up to 3 crafts, trades or professions that best represent your lineage.',
+    type: 'multiselect',
+    min: 1,
+    max: 3,
+    options: [
+      'Farmer / Agriculture',
+      'Shepherd / Herder',
+      'Fisherman / Sailor',
+      'Merchant / Trader',
+      'Banker / Financier',
+      'Craftsman / Artisan',
+      'Blacksmith / Metalworker',
+      'Carpenter / Builder',
+      'Weaver / Tailor',
+      'Potter / Ceramicist',
+      'Jeweler / Goldsmith',
+      'Baker / Miller',
+      'Miner',
+      'Physician / Healer',
+      'Scholar / Teacher',
+      'Priest / Religious Leader',
+      'Soldier / Warrior',
+      'Judge / Lawyer',
+      'Artist / Painter',
+      'Musician',
+      'Architect',
+      'Engineer',
+      'Writer / Scribe',
+      'Diplomat / Statesman',
+      'Hunter / Tracker',
+      'Gardener / Botanist',
+      'Inventor / Scientist',
+    ],
   },
   {
     id: 'values',
@@ -97,10 +147,14 @@ export function buildProfile(answers: Record<string, string | string[]>): Omit<S
     'Forest Green (#1B4332)': '#1B4332',
   };
 
+  const occupation = Array.isArray(answers.occupation)
+    ? (answers.occupation as string[]).join(', ')
+    : (answers.occupation as string) ?? '';
+
   return {
     roots: {
       origin: answers.origin as string ?? '',
-      historicOccupation: answers.occupation as string ?? '',
+      historicOccupation: occupation,
     },
     values: (answers.values as string[]) ?? [],
     visual: {

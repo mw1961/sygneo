@@ -63,15 +63,22 @@ export default function HomePage() {
   const question: ProfilerQuestion | undefined = QUESTIONS[step];
   const isLastStep = step === QUESTIONS.length - 1;
 
+  const minSelect = question?.min ?? (question?.type === 'multiselect' ? 2 : 1);
   const canProceed = question?.type === 'text'
     ? currentText.trim().length > 0
-    : selectedOptions.length > 0 && (question?.type !== 'multiselect' || selectedOptions.length >= 2);
+    : selectedOptions.length >= minSelect;
 
   function toggleOption(opt: string) {
-    if (question?.type === 'select') setSelectedOptions([opt]);
-    else setSelectedOptions(prev =>
-      prev.includes(opt) ? prev.filter(o => o !== opt) : [...prev, opt]
-    );
+    if (question?.type === 'select' || question?.type === 'dropdown') {
+      setSelectedOptions([opt]);
+    } else {
+      const max = question?.max ?? Infinity;
+      setSelectedOptions(prev => {
+        if (prev.includes(opt)) return prev.filter(o => o !== opt);
+        if (prev.length >= max) return prev;
+        return [...prev, opt];
+      });
+    }
   }
 
   const generateSeals = useCallback(async (
@@ -338,18 +345,41 @@ export default function HomePage() {
             onBlur={e => e.target.style.borderBottomColor = C.border} />
         )}
 
+        {question?.type === 'dropdown' && (
+          <div style={{ position: 'relative' }}>
+            <select
+              value={selectedOptions[0] ?? ''}
+              onChange={e => setSelectedOptions(e.target.value ? [e.target.value] : [])}
+              style={{ width: '100%', background: C.surface, border: `1px solid ${selectedOptions[0] ? C.borderAct : C.border}`, color: selectedOptions[0] ? C.text : C.muted, fontSize: 15, padding: '14px 40px 14px 16px', outline: 'none', fontFamily: 'Georgia, serif', appearance: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
+              <option value="">— Select a country —</option>
+              {question.options?.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+            <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: C.muted, fontSize: 12 }}>▾</span>
+          </div>
+        )}
+
         {(question?.type === 'select' || question?.type === 'multiselect') && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {question.options?.map(opt => {
-              const active = selectedOptions.includes(opt);
-              return (
-                <button key={opt} onClick={() => toggleOption(opt)}
-                  style={{ textAlign: 'left', padding: '14px 20px', border: `1px solid ${active ? C.borderAct : C.border}`, background: active ? 'rgba(139,115,85,0.06)' : C.surface, color: active ? C.text : C.sub, fontSize: 14, cursor: 'pointer', fontFamily: 'Georgia, serif', transition: 'all 0.2s' }}>
-                  {opt}
-                </button>
-              );
-            })}
-            {question.type === 'multiselect' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {question?.type === 'multiselect' && question.max && (
+              <p style={{ fontSize: 11, color: selectedOptions.length >= (question.max ?? 3) ? C.gold : C.muted, marginBottom: 4, fontFamily: 'Helvetica, Arial, sans-serif', letterSpacing: '0.1em' }}>
+                {selectedOptions.length} / {question.max} selected
+              </p>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: question.options && question.options.length > 8 ? 320 : 'none', overflowY: question.options && question.options.length > 8 ? 'auto' : 'visible', paddingRight: question.options && question.options.length > 8 ? 4 : 0 }}>
+              {question.options?.map(opt => {
+                const active   = selectedOptions.includes(opt);
+                const atMax    = !active && selectedOptions.length >= (question?.max ?? Infinity);
+                return (
+                  <button key={opt} onClick={() => !atMax && toggleOption(opt)} disabled={atMax}
+                    style={{ textAlign: 'left', padding: '12px 18px', border: `1px solid ${active ? C.borderAct : C.border}`, background: active ? 'rgba(139,115,85,0.06)' : C.surface, color: active ? C.text : atMax ? C.muted : C.sub, fontSize: 14, cursor: atMax ? 'not-allowed' : 'pointer', fontFamily: 'Georgia, serif', transition: 'all 0.2s', opacity: atMax ? 0.45 : 1 }}>
+                    {active && <span style={{ color: C.gold, marginRight: 8 }}>✓</span>}{opt}
+                  </button>
+                );
+              })}
+            </div>
+            {question.type === 'multiselect' && !question.max && (
               <p style={{ fontSize: 11, color: C.muted, marginTop: 4, fontFamily: 'Helvetica, Arial, sans-serif', letterSpacing: '0.1em' }}>Select 2–3 values</p>
             )}
           </div>
