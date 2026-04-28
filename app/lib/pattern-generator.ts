@@ -1,6 +1,6 @@
 /**
  * Algorithmic pattern generator for Sygneo Heritage Seals.
- * Each family's SHA-256 hash seeds a deterministic RNG → unique, repeatable patterns.
+ * Hash-seeded RNG → scattered disconnected fragments, unique per family.
  */
 
 // ── Seeded RNG ────────────────────────────────────────────────────────────────
@@ -13,15 +13,6 @@ function seedRNG(hash: string): () => number {
     s = (s ^ (s >>> 16)) >>> 0;
     return s / 0x100000000;
   };
-}
-
-function shuffle<T>(arr: T[], rng: () => number): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
 }
 
 // ── Profile → Hash ────────────────────────────────────────────────────────────
@@ -37,105 +28,112 @@ export async function hashProfile(
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// ── Angular: Maze (recursive backtracker 8×8) ─────────────────────────────────
+// ── Fragment helpers ──────────────────────────────────────────────────────────
+
+// Rotate & translate a local (x,y) point to world coords
+function xfPoint(
+  lx: number, ly: number,
+  cx: number, cy: number,
+  cos: number, sin: number,
+): string {
+  return `${(cx + lx * cos - ly * sin).toFixed(1)},${(cy + lx * sin + ly * cos).toFixed(1)}`;
+}
+
+// ── Angular fragments: L / C / Z / T / bracket — strict 90° with slight jitter
+
+function angularFrag(rng: () => number, cx: number, cy: number, s: number): string {
+  const type = Math.floor(rng() * 6);
+  const rot  = Math.floor(rng() * 4) * (Math.PI / 2) + (rng() - 0.5) * 0.14; // ±8° jitter
+  const cos  = Math.cos(rot), sin = Math.sin(rot);
+  const p = (x: number, y: number) => xfPoint(x, y, cx, cy, cos, sin);
+  const h = s * 0.5;
+
+  switch (type) {
+    case 0: // L corner
+      return `M${p(-h, -h)} L${p(-h, h)} L${p(h, h)}`;
+    case 1: // C bracket (3-sided open square)
+      return `M${p(h, -h)} L${p(-h, -h)} L${p(-h, h)} L${p(h, h)}`;
+    case 2: // Z / S shape (3 separate strokes)
+      return `M${p(-h, -h)} L${p(h * 0.3, -h)} M${p(-h * 0.3, 0)} L${p(h * 0.3, 0)} M${p(-h * 0.3, h)} L${p(h, h)}`;
+    case 3: // T shape
+      return `M${p(-h, -h * 0.2)} L${p(h, -h * 0.2)} M${p(0, -h * 0.2)} L${p(0, h)}`;
+    case 4: // double bracket (two parallel lines with end cap)
+      return `M${p(-h, -h)} L${p(-h, h)} M${p(h * 0.2, -h)} L${p(h * 0.2, h)} M${p(-h, h)} L${p(h * 0.2, h)}`;
+    case 5: // reverse-C (bracket facing other way)
+      return `M${p(-h, -h)} L${p(h, -h)} L${p(h, h)} L${p(-h, h)}`.split('L').slice(0,3).join('L');
+  }
+  return `M${p(-h, 0)} L${p(h, 0)}`;
+}
+
+// ── Organic fragments: arcs, S-curves, spirals — any rotation ────────────────
+
+function organicFrag(rng: () => number, cx: number, cy: number, s: number): string {
+  const type = Math.floor(rng() * 5);
+  const rot  = rng() * Math.PI * 2;
+  const cos  = Math.cos(rot), sin = Math.sin(rot);
+  const p  = (x: number, y: number) => xfPoint(x, y, cx, cy, cos, sin);
+  const cp = (x: number, y: number) => `${(cx + x * cos - y * sin).toFixed(1)} ${(cy + x * sin + y * cos).toFixed(1)}`;
+  const h = s * 0.5;
+
+  switch (type) {
+    case 0: // quarter-circle arc
+      return `M${p(-h, 0)} A${s.toFixed(1)},${s.toFixed(1)} 0 0 1 ${p(0, -h)}`;
+    case 1: // open arc — C-shaped curve
+      return `M${p(h * 0.7, -h)} A${h.toFixed(1)},${h.toFixed(1)} 0 1 0 ${p(h * 0.7, h)}`;
+    case 2: // S-curve
+      return `M${p(-h, -h)} C${cp(-h * 0.2, 0)} ${cp(h * 0.2, 0)} ${p(h, h)}`;
+    case 3: // spiral end (arc + curl)
+      return `M${p(-h, 0)} C${cp(-h, -h)} ${cp(h, -h)} ${p(h, 0)} C${cp(h, h * 0.5)} ${cp(0, h * 0.5)} ${p(0, 0)}`;
+    case 4: // wavy stroke
+      return `M${p(-h, -h * 0.3)} C${cp(-h * 0.3, h * 0.5)} ${cp(h * 0.3, -h * 0.5)} ${p(h, h * 0.3)}`;
+  }
+  return `M${p(-h, 0)} A${h.toFixed(1)},${h.toFixed(1)} 0 0 1 ${p(0, -h)}`;
+}
+
+// ── Scatter engine: place fragments in a grid with gaps ───────────────────────
+
+function scatterFragments(
+  rng: () => number,
+  ox: number, oy: number,
+  w: number,  h: number,
+  fragFn: (rng: () => number, cx: number, cy: number, s: number) => string,
+  cols = 4, rows = 4,
+  skipProb = 0.28,
+): string {
+  const cw = w / cols, ch = h / rows;
+  const parts: string[] = [];
+
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      if (rng() < skipProb) continue;
+      const cx  = ox + (col + 0.12 + rng() * 0.76) * cw;
+      const cy  = oy + (row + 0.12 + rng() * 0.76) * ch;
+      const sz  = Math.min(cw, ch) * (0.38 + rng() * 0.38);
+      parts.push(fragFn(rng, cx, cy, sz));
+    }
+  }
+  return parts.join(' ');
+}
+
+// ── Three pattern types ───────────────────────────────────────────────────────
 
 function mazePattern(rng: () => number, ox: number, oy: number, w: number, h: number): string {
-  const COLS = 8, ROWS = 8;
-  const cw = w / COLS, ch = h / ROWS;
-
-  const hW = Array.from({ length: ROWS + 1 }, () => Array(COLS).fill(true));
-  const vW = Array.from({ length: ROWS }, () => Array(COLS + 1).fill(true));
-  const vis = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
-
-  function carve(r: number, c: number) {
-    vis[r][c] = true;
-    for (const [dr, dc] of shuffle([[-1,0],[1,0],[0,-1],[0,1]], rng)) {
-      const nr = r + dr, nc = c + dc;
-      if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && !vis[nr][nc]) {
-        if (dr === -1) hW[r][c]   = false;
-        if (dr ===  1) hW[r+1][c] = false;
-        if (dc === -1) vW[r][c]   = false;
-        if (dc ===  1) vW[r][c+1] = false;
-        carve(nr, nc);
-      }
-    }
-  }
-  carve(Math.floor(rng() * ROWS), Math.floor(rng() * COLS));
-
-  const segs: string[] = [];
-  for (let r = 0; r <= ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      if (hW[r][c]) {
-        const x1 = ox + c * cw, x2 = ox + (c + 1) * cw, y = oy + r * ch;
-        segs.push(`M${x1.toFixed(1)},${y.toFixed(1)} L${x2.toFixed(1)},${y.toFixed(1)}`);
-      }
-    }
-  }
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c <= COLS; c++) {
-      if (vW[r][c]) {
-        const x = ox + c * cw, y1 = oy + r * ch, y2 = oy + (r + 1) * ch;
-        segs.push(`M${x.toFixed(1)},${y1.toFixed(1)} L${x.toFixed(1)},${y2.toFixed(1)}`);
-      }
-    }
-  }
-  return segs.join(' ');
+  return scatterFragments(rng, ox, oy, w, h, angularFrag, 4, 4, 0.26);
 }
-
-// ── Organic: N-petal flower (chrysanthemum / kamon) ───────────────────────────
 
 function organicPattern(rng: () => number, cx: number, cy: number, r: number): string {
-  const N        = 6 + Math.floor(rng() * 7);        // 6–12 petals
-  const petalR   = r * (0.68 + rng() * 0.16);        // tip distance
-  const halfW    = petalR * (0.18 + rng() * 0.16);   // petal half-width
-  const tension  = 0.48 + rng() * 0.16;              // bezier pull along axis
-  const rotation = rng() * (Math.PI * 2 / N);
-  const paths: string[] = [];
-
-  for (let i = 0; i < N; i++) {
-    const a    = (i / N) * Math.PI * 2 + rotation;
-    const tipX = cx + Math.cos(a) * petalR;
-    const tipY = cy + Math.sin(a) * petalR;
-    const perp = a + Math.PI / 2;
-    const axDist = petalR * tension;
-
-    const cp1x = cx + Math.cos(a) * axDist + Math.cos(perp) * halfW;
-    const cp1y = cy + Math.sin(a) * axDist + Math.sin(perp) * halfW;
-    const cp2x = tipX + Math.cos(perp) * halfW * 0.28;
-    const cp2y = tipY + Math.sin(perp) * halfW * 0.28;
-    const cp3x = tipX - Math.cos(perp) * halfW * 0.28;
-    const cp3y = tipY - Math.sin(perp) * halfW * 0.28;
-    const cp4x = cx + Math.cos(a) * axDist - Math.cos(perp) * halfW;
-    const cp4y = cy + Math.sin(a) * axDist - Math.sin(perp) * halfW;
-
-    paths.push(
-      `M${cx.toFixed(1)},${cy.toFixed(1)} ` +
-      `C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${tipX.toFixed(1)},${tipY.toFixed(1)} ` +
-      `C${cp3x.toFixed(1)},${cp3y.toFixed(1)} ${cp4x.toFixed(1)},${cp4y.toFixed(1)} ${cx.toFixed(1)},${cy.toFixed(1)} Z`
-    );
-  }
-
-  // Center circle
-  const cr = r * 0.10;
-  paths.push(
-    `M${(cx + cr).toFixed(1)},${cy.toFixed(1)} ` +
-    `A${cr.toFixed(1)},${cr.toFixed(1)} 0 1 1 ${(cx - cr).toFixed(1)},${cy.toFixed(1)} ` +
-    `A${cr.toFixed(1)},${cr.toFixed(1)} 0 1 1 ${(cx + cr).toFixed(1)},${cy.toFixed(1)}`
-  );
-
-  return paths.join(' ');
+  const s = r * 1.62;
+  return scatterFragments(rng, cx - s / 2, cy - s / 2, s, s, organicFrag, 4, 4, 0.26);
 }
 
-// ── Hybrid: Gear outer ring + nested rotating polygons ────────────────────────
-
 function hybridPattern(rng: () => number, cx: number, cy: number, r: number): string {
-  // Outer gear ring
+  // Outer gear ring (angular identity frame)
   const outerParts: string[] = [];
-  const segments = 12 + Math.floor(rng() * 7);
+  const segments = 10 + Math.floor(rng() * 6);
   for (let i = 0; i < segments; i++) {
     const a1 = (i / segments) * Math.PI * 2;
-    const a2 = ((i + 0.68 + rng() * 0.22) / segments) * Math.PI * 2;
-    const r1 = r * 0.56 + rng() * r * 0.08;
+    const a2 = ((i + 0.65 + rng() * 0.25) / segments) * Math.PI * 2;
+    const r1 = r * 0.58 + rng() * r * 0.07;
     const r2 = r * 0.80 + rng() * r * 0.05;
     outerParts.push(
       `M${(cx + Math.cos(a1) * r1).toFixed(1)},${(cy + Math.sin(a1) * r1).toFixed(1)} ` +
@@ -145,33 +143,11 @@ function hybridPattern(rng: () => number, cx: number, cy: number, r: number): st
     );
   }
 
-  // Inner nested polygons — each ring rotated progressively
-  const N       = 4 + Math.floor(rng() * 4);         // 4–7 sides
-  const rings   = 3 + Math.floor(rng() * 2);          // 3–4 rings
-  const baseRot = rng() * (Math.PI * 2 / N);
-  const rotStep = (Math.PI / N) * (0.28 + rng() * 0.44);
-  const innerParts: string[] = [];
+  // Inner: scattered angular fragments (smaller grid)
+  const s = r * 0.94;
+  const inner = scatterFragments(rng, cx - s / 2, cy - s / 2, s, s, angularFrag, 3, 3, 0.22);
 
-  for (let ring = 1; ring <= rings; ring++) {
-    const ringR = (ring / (rings + 0.6)) * r * 0.50;
-    const rot   = baseRot + ring * rotStep;
-    const pts: string[] = [];
-    for (let i = 0; i < N; i++) {
-      const a = (i / N) * Math.PI * 2 + rot;
-      pts.push(`${i === 0 ? 'M' : 'L'}${(cx + Math.cos(a) * ringR).toFixed(1)},${(cy + Math.sin(a) * ringR).toFixed(1)}`);
-    }
-    innerParts.push(pts.join(' ') + ' Z');
-  }
-
-  // Small center dot
-  const cr = r * 0.07;
-  innerParts.push(
-    `M${(cx + cr).toFixed(1)},${cy.toFixed(1)} ` +
-    `A${cr.toFixed(1)},${cr.toFixed(1)} 0 1 1 ${(cx - cr).toFixed(1)},${cy.toFixed(1)} ` +
-    `A${cr.toFixed(1)},${cr.toFixed(1)} 0 1 1 ${(cx + cr).toFixed(1)},${cy.toFixed(1)}`
-  );
-
-  return [...outerParts, ...innerParts].join(' ');
+  return outerParts.join(' ') + ' ' + inner;
 }
 
 // ── Shape clips and borders ───────────────────────────────────────────────────
@@ -200,17 +176,15 @@ export function renderSeal(
   color:   string,
   variant = 0,
 ): string {
-  // variant rotates the hash to produce a completely different seed
-  const shift = (variant * 7) % (hash.length - 8);
+  const shift   = (variant * 7) % (hash.length - 8);
   const rotated = hash.slice(shift) + hash.slice(0, shift);
-  const offset = pattern === 'angular' ? 0 : pattern === 'organic' ? 16 : 32;
-  const rng = seedRNG(rotated.slice(offset, offset + 8) + rotated.slice(0, offset));
+  const offset  = pattern === 'angular' ? 0 : pattern === 'organic' ? 16 : 32;
+  const rng     = seedRNG(rotated.slice(offset, offset + 8) + rotated.slice(0, offset));
 
   let innerPaths = '';
-
   if (pattern === 'angular') {
-    const m = 24;
-    innerPaths = mazePattern(rng, m + 4, m + 4, 200 - m * 2 - 8, 200 - m * 2 - 8);
+    const m = 22;
+    innerPaths = mazePattern(rng, m, m, 200 - m * 2, 200 - m * 2);
   } else if (pattern === 'organic') {
     innerPaths = organicPattern(rng, 100, 100, 78);
   } else {
@@ -224,7 +198,7 @@ export function renderSeal(
   <defs>${clip}</defs>
   ${border}
   <g clip-path="url(#c)">
-    <path d="${innerPaths}" stroke="${color}" fill="none" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${innerPaths}" stroke="${color}" fill="none" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>`;
 }
