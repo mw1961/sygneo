@@ -61,6 +61,7 @@ export default function HomePage() {
   const [savedId, setSavedId]                 = useState('');
   const [customInput, setCustomInput]         = useState('');
   const [customPending, setCustomPending]     = useState('');
+  const [variant, setVariant]                 = useState(0);
 
   const question: ProfilerQuestion | undefined = QUESTIONS[step];
   const isLastStep = step === QUESTIONS.length - 1;
@@ -88,6 +89,7 @@ export default function HomePage() {
   const generateSeals = useCallback(async (
     currentAnswers: Record<string, string | string[]>,
     inkColor: string,
+    v = 0,
   ) => {
     const profile = buildProfile({ ...currentAnswers, shape: 'circle' });
     setPhase('generating');
@@ -101,6 +103,7 @@ export default function HomePage() {
           occupation: profile.roots.historicOccupation,
           values:     profile.values,
           color:      inkColor,
+          variant:    v,
         }),
       });
       const data = await res.json();
@@ -131,7 +134,8 @@ export default function HomePage() {
     setCustomPending('');
 
     if (isLastStep) {
-      await generateSeals(updated, color);
+      setVariant(0);
+      await generateSeals(updated, color, 0);
     } else {
       setStep(s => s + 1);
     }
@@ -140,8 +144,15 @@ export default function HomePage() {
   async function handleColorChange(newColor: string) {
     setColor(newColor);
     if (phase === 'results') {
-      await generateSeals(answers, newColor);
+      await generateSeals(answers, newColor, variant);
     }
+  }
+
+  async function handleGenerateMore() {
+    const next = variant + 1;
+    setVariant(next);
+    setChosen(null);
+    await generateSeals(answers, color, next);
   }
 
   async function handleConfirm() {
@@ -182,7 +193,7 @@ export default function HomePage() {
     setStep(0); setAnswers({}); setCurrentText(''); setSelectedOptions([]);
     setPhase('questionnaire'); setSeals([]); setChosen(null); setNotes('');
     setError(''); setSavedId(''); setColor('#000000');
-    setCustomInput(''); setCustomPending('');
+    setCustomInput(''); setCustomPending(''); setVariant(0);
   }
 
   // ── Generating ──────────────────────────────────────────────────────────────
@@ -312,10 +323,21 @@ export default function HomePage() {
 
           {error && <p style={{ color: '#A0522D', fontSize: 13, marginTop: 16 }}>{error}</p>}
 
-          <button onClick={handleReset}
-            style={{ marginTop: 20, padding: '10px 24px', border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
-            Start Over
-          </button>
+          <div style={{ display: 'flex', gap: 12, marginTop: 20, alignItems: 'center' }}>
+            <button onClick={handleGenerateMore}
+              style={{ padding: '10px 24px', border: `1px solid ${C.gold}`, background: 'transparent', color: C.gold, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+              ↻ Generate 9 More
+            </button>
+            <button onClick={handleReset}
+              style={{ padding: '10px 24px', border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+              Start Over
+            </button>
+            {variant > 0 && (
+              <span style={{ fontSize: 10, color: C.muted, letterSpacing: '0.15em', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+                Set {variant + 1}
+              </span>
+            )}
+          </div>
         </div>
       </main>
     );

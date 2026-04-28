@@ -198,9 +198,13 @@ export function renderSeal(
   pattern: PatternType,
   shape:   ShapeType,
   color:   string,
+  variant = 0,
 ): string {
+  // variant rotates the hash to produce a completely different seed
+  const shift = (variant * 7) % (hash.length - 8);
+  const rotated = hash.slice(shift) + hash.slice(0, shift);
   const offset = pattern === 'angular' ? 0 : pattern === 'organic' ? 16 : 32;
-  const rng = seedRNG(hash.slice(offset, offset + 8) + hash.slice(0, offset));
+  const rng = seedRNG(rotated.slice(offset, offset + 8) + rotated.slice(0, offset));
 
   let innerPaths = '';
 
@@ -227,7 +231,7 @@ export function renderSeal(
 
 // ── Generate all 9 ────────────────────────────────────────────────────────────
 
-export function renderAllNine(hash: string, color: string): {
+export function renderAllNine(hash: string, color: string, variant = 0): {
   pattern: PatternType; shape: ShapeType; svg: string;
 }[] {
   const patterns: PatternType[] = ['angular', 'organic', 'hybrid'];
@@ -236,7 +240,7 @@ export function renderAllNine(hash: string, color: string): {
 
   for (const shape of shapes) {
     for (const pattern of patterns) {
-      results.push({ pattern, shape, svg: renderSeal(hash, pattern, shape, color) });
+      results.push({ pattern, shape, svg: renderSeal(hash, pattern, shape, color, variant) });
     }
   }
   return results;

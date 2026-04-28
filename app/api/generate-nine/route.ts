@@ -3,10 +3,10 @@ import { hashProfile, renderAllNine } from '@/app/lib/pattern-generator';
 
 export async function POST(request: NextRequest) {
   try {
-    const { origin, occupation, values, familyName, color } = await request.json();
+    const { origin, occupation, values, familyName, color, variant } = await request.json();
 
     const hash = await hashProfile(origin ?? '', occupation ?? '', values ?? [], familyName);
-    const seals = renderAllNine(hash, color ?? '#000000');
+    const seals = renderAllNine(hash, color ?? '#000000', variant ?? 0);
 
     return NextResponse.json({ seals, hash });
   } catch (err) {
