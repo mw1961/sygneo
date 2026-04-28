@@ -51,9 +51,10 @@ export default function HomePage() {
   const [currentText, setCurrentText]         = useState('');
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [phase, setPhase]                     = useState<Phase>('questionnaire');
-  const [seals, setSeals]                     = useState<SealOption[]>([]);
+  const [sealHistory, setSealHistory]         = useState<SealOption[][]>([]);
+  const [currentSet, setCurrentSet]           = useState(0);
+  const [chosenBySet, setChosenBySet]         = useState<Record<number, number | null>>({});
   const [hash, setHash]                       = useState('');
-  const [chosen, setChosen]                   = useState<number | null>(null);
   const [notes, setNotes]                     = useState('');
   const [color, setColor]                     = useState('#000000');
   const [error, setError]                     = useState('');
@@ -62,6 +63,11 @@ export default function HomePage() {
   const [customInput, setCustomInput]         = useState('');
   const [customPending, setCustomPending]     = useState('');
   const [variant, setVariant]                 = useState(0);
+
+  const seals  = sealHistory[currentSet] ?? [];
+  const chosen = chosenBySet[currentSet] ?? null;
+  const setChosen = (idx: number | null) =>
+    setChosenBySet(prev => ({ ...prev, [currentSet]: idx }));
 
   const question: ProfilerQuestion | undefined = QUESTIONS[step];
   const isLastStep = step === QUESTIONS.length - 1;
@@ -108,9 +114,13 @@ export default function HomePage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Generation failed');
-      setSeals(data.seals);
+      setSealHistory(prev => {
+        const next = [...prev];
+        next[v] = data.seals;
+        return next;
+      });
+      setCurrentSet(v);
       setHash(data.hash);
-      setChosen(null);
       setPhase('results');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Generation failed');
@@ -135,6 +145,9 @@ export default function HomePage() {
 
     if (isLastStep) {
       setVariant(0);
+      setSealHistory([]);
+      setChosenBySet({});
+      setCurrentSet(0);
       await generateSeals(updated, color, 0);
     } else {
       setStep(s => s + 1);
@@ -144,14 +157,33 @@ export default function HomePage() {
   async function handleColorChange(newColor: string) {
     setColor(newColor);
     if (phase === 'results') {
-      await generateSeals(answers, newColor, variant);
+      // Regenerate all stored sets with new color
+      const newHistory: SealOption[][] = [];
+      for (let v = 0; v <= variant; v++) {
+        const profile = buildProfile({ ...answers, shape: 'circle' });
+        try {
+          const res = await fetch('/api/generate-nine', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              origin:     profile.roots.origin,
+              occupation: profile.roots.historicOccupation,
+              values:     profile.values,
+              color:      newColor,
+              variant:    v,
+            }),
+          });
+          const data = await res.json();
+          if (res.ok) newHistory[v] = data.seals;
+        } catch { /* keep old */ }
+      }
+      setSealHistory(newHistory);
     }
   }
 
   async function handleGenerateMore() {
     const next = variant + 1;
     setVariant(next);
-    setChosen(null);
     await generateSeals(answers, color, next);
   }
 
@@ -191,9 +223,9 @@ export default function HomePage() {
 
   function handleReset() {
     setStep(0); setAnswers({}); setCurrentText(''); setSelectedOptions([]);
-    setPhase('questionnaire'); setSeals([]); setChosen(null); setNotes('');
+    setPhase('questionnaire'); setSealHistory([]); setChosenBySet({}); setNotes('');
     setError(''); setSavedId(''); setColor('#000000');
-    setCustomInput(''); setCustomPending(''); setVariant(0);
+    setCustomInput(''); setCustomPending(''); setVariant(0); setCurrentSet(0);
   }
 
   // ── Generating ──────────────────────────────────────────────────────────────
@@ -323,7 +355,26 @@ export default function HomePage() {
 
           {error && <p style={{ color: '#A0522D', fontSize: 13, marginTop: 16 }}>{error}</p>}
 
-          <div style={{ display: 'flex', gap: 12, marginTop: 20, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 12, marginTop: 24, alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Back / Forward navigation */}
+            {sealHistory.length > 1 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: `1px solid ${C.border}`, padding: '4px 8px' }}>
+                <button onClick={() => { setCurrentSet(s => Math.max(0, s - 1)); }}
+                  disabled={currentSet === 0}
+                  style={{ background: 'none', border: 'none', color: currentSet === 0 ? C.muted : C.gold, fontSize: 16, cursor: currentSet === 0 ? 'default' : 'pointer', padding: '4px 8px', lineHeight: 1 }}>
+                  ←
+                </button>
+                <span style={{ fontSize: 10, color: C.muted, letterSpacing: '0.15em', fontFamily: 'Helvetica, Arial, sans-serif', minWidth: 48, textAlign: 'center' }}>
+                  {currentSet + 1} / {sealHistory.length}
+                </span>
+                <button onClick={() => { setCurrentSet(s => Math.min(sealHistory.length - 1, s + 1)); }}
+                  disabled={currentSet === sealHistory.length - 1}
+                  style={{ background: 'none', border: 'none', color: currentSet === sealHistory.length - 1 ? C.muted : C.gold, fontSize: 16, cursor: currentSet === sealHistory.length - 1 ? 'default' : 'pointer', padding: '4px 8px', lineHeight: 1 }}>
+                  →
+                </button>
+              </div>
+            )}
+
             <button onClick={handleGenerateMore}
               style={{ padding: '10px 24px', border: `1px solid ${C.gold}`, background: 'transparent', color: C.gold, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
               ↻ Generate 9 More
@@ -332,11 +383,6 @@ export default function HomePage() {
               style={{ padding: '10px 24px', border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
               Start Over
             </button>
-            {variant > 0 && (
-              <span style={{ fontSize: 10, color: C.muted, letterSpacing: '0.15em', fontFamily: 'Helvetica, Arial, sans-serif' }}>
-                Set {variant + 1}
-              </span>
-            )}
           </div>
         </div>
       </main>
