@@ -117,9 +117,10 @@ export default function HomePage() {
 
   async function handleNext() {
     if (!question) return;
-    const value = question.type === 'multiselect' ? selectedOptions
-                : question.type === 'dropdown'    ? (customInput.trim() || selectedOptions[0] || '')
-                : question.type === 'select'      ? selectedOptions[0] ?? ''
+    const value = question.type === 'multiselect'                    ? selectedOptions
+                : question.type === 'dropdown' && (question.max ?? 1) > 1 ? selectedOptions
+                : question.type === 'dropdown'                            ? (customInput.trim() || selectedOptions[0] || '')
+                : question.type === 'select'                              ? selectedOptions[0] ?? ''
                 : currentText;
 
     const updated = { ...answers, [question.id]: value };
@@ -353,32 +354,66 @@ export default function HomePage() {
             onBlur={e => e.target.style.borderBottomColor = C.border} />
         )}
 
-        {question?.type === 'dropdown' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ position: 'relative' }}>
-              <select
-                value={customInput.trim() ? '' : (selectedOptions[0] ?? '')}
-                onChange={e => { setSelectedOptions(e.target.value ? [e.target.value] : []); setCustomInput(''); }}
-                style={{ width: '100%', background: C.surface, border: `1px solid ${(selectedOptions[0] && !customInput.trim()) ? C.borderAct : C.border}`, color: (selectedOptions[0] && !customInput.trim()) ? C.text : C.muted, fontSize: 15, padding: '14px 40px 14px 16px', outline: 'none', fontFamily: 'Georgia, serif', appearance: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
-                <option value="">— Select a country —</option>
-                {question.options?.map(opt => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-              <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: C.muted, fontSize: 12 }}>▾</span>
+        {question?.type === 'dropdown' && (() => {
+          const max = question.max ?? 1;
+          const atMax = selectedOptions.length >= max;
+          function addCountry(val: string) {
+            const v = val.trim();
+            if (!v || selectedOptions.includes(v) || atMax) return;
+            setSelectedOptions(prev => [...prev, v]);
+          }
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {/* Selected chips */}
+              {selectedOptions.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {selectedOptions.map(opt => (
+                    <span key={opt} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: `1px solid ${C.borderAct}`, background: 'rgba(139,115,85,0.06)', fontSize: 13, fontFamily: 'Georgia, serif', color: C.text }}>
+                      {opt}
+                      <button onClick={() => setSelectedOptions(prev => prev.filter(o => o !== opt))}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: 14, lineHeight: 1, padding: 0 }}>×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {/* Counter */}
+              {max > 1 && (
+                <p style={{ fontSize: 10, color: atMax ? C.gold : C.muted, margin: 0, fontFamily: 'Helvetica, Arial, sans-serif', letterSpacing: '0.1em' }}>
+                  {selectedOptions.length} / {max} selected
+                </p>
+              )}
+              {/* Dropdown */}
+              {!atMax && (
+                <div style={{ position: 'relative' }}>
+                  <select value="" onChange={e => { addCountry(e.target.value); e.target.value = ''; }}
+                    style={{ width: '100%', background: C.surface, border: `1px solid ${C.border}`, color: C.muted, fontSize: 15, padding: '14px 40px 14px 16px', outline: 'none', fontFamily: 'Georgia, serif', appearance: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
+                    <option value="">— Select a country —</option>
+                    {question.options?.filter(o => !selectedOptions.includes(o)).map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                  <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: C.muted, fontSize: 12 }}>▾</span>
+                </div>
+              )}
+              {/* Free text */}
+              {!atMax && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 10, color: C.muted, letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif', whiteSpace: 'nowrap' }}>Or type:</span>
+                  <input type="text" value={customInput}
+                    onChange={e => setCustomInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && customInput.trim()) { addCountry(customInput); setCustomInput(''); } }}
+                    placeholder="e.g. Catalonia, Yemen 1800s..."
+                    style={{ flex: 1, background: 'transparent', border: 'none', borderBottom: `1px solid ${customInput.trim() ? C.borderAct : C.border}`, color: C.text, fontSize: 15, paddingBottom: 8, outline: 'none', fontFamily: 'Georgia, serif' }} />
+                  <button onClick={() => { addCountry(customInput); setCustomInput(''); }}
+                    disabled={!customInput.trim()}
+                    style={{ padding: '6px 14px', border: `1px solid ${C.border}`, background: 'transparent', color: C.gold, fontSize: 11, letterSpacing: '0.15em', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif', textTransform: 'uppercase' }}>
+                    + Add
+                  </button>
+                </div>
+              )}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 10, color: C.muted, letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif', whiteSpace: 'nowrap' }}>Or type:</span>
-              <input
-                type="text"
-                value={customInput}
-                onChange={e => { setCustomInput(e.target.value); if (e.target.value.trim()) setSelectedOptions([]); }}
-                placeholder="e.g. Catalonia, Yemen 1800s..."
-                style={{ flex: 1, background: 'transparent', border: 'none', borderBottom: `1px solid ${customInput.trim() ? C.borderAct : C.border}`, color: C.text, fontSize: 15, paddingBottom: 8, outline: 'none', fontFamily: 'Georgia, serif' }}
-              />
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {(question?.type === 'select' || question?.type === 'multiselect') && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

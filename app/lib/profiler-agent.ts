@@ -32,8 +32,10 @@ export const PROFILER_QUESTIONS: ProfilerQuestion[] = [
     id: 'origin',
     step: 2,
     question: 'Where does your family come from?',
-    hint: 'Choose the country of origin — the land your lineage is rooted in.',
+    hint: 'Choose up to 3 countries — your lineage may span multiple lands across generations.',
     type: 'dropdown',
+    min: 1,
+    max: 3,
     options: [
       'Afghanistan','Algeria','Angola','Argentina','Armenia','Australia','Austria',
       'Azerbaijan','Belarus','Belgium','Bolivia','Bosnia','Brazil','Bulgaria',
@@ -147,13 +149,17 @@ export function buildProfile(answers: Record<string, string | string[]>): Omit<S
     'Forest Green (#1B4332)': '#1B4332',
   };
 
+  const origin = Array.isArray(answers.origin)
+    ? (answers.origin as string[]).join(', ')
+    : (answers.origin as string) ?? '';
+
   const occupation = Array.isArray(answers.occupation)
     ? (answers.occupation as string[]).join(', ')
     : (answers.occupation as string) ?? '';
 
   return {
     roots: {
-      origin: answers.origin as string ?? '',
+      origin,
       historicOccupation: occupation,
     },
     values: (answers.values as string[]) ?? [],
