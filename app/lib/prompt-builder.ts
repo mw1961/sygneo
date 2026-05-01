@@ -1,168 +1,114 @@
 /**
- * Builds Recraft V3 SVG prompts — strictly geometric, stamp-ready.
- * Zero animals, zero plants, zero figures, zero text, zero national/religious symbols.
+ * Prompt builder — abstract geometric metaphors per origin + occupation.
+ * Strategy: translate inputs into geometric symbols, never literal objects.
  */
 
-// ── Region → geometric art tradition ─────────────────────────────────────────
+// ── Origin → geometric art metaphor ──────────────────────────────────────────
 
-const REGION_GEOMETRY: Record<string, string> = {
-  // Middle East / North Africa
-  israel:          'eight-pointed geometric star with interlocking rings',
-  morocco:         'twelve-pointed geometric star with tessellating polygons',
-  tunisia:         'hexagonal grid with interlocking diamond shapes',
-  egypt:           'nested concentric squares with radiating diagonals',
-  iraq:            'ancient stepped pyramid geometric grid',
-  iran:            'sixteen-sided star with arabesque grid lines',
-  turkey:          'anatolian geometric lattice with interlocking hexagons',
-  jordan:          'angular interlace pattern with crossing diagonals',
-  lebanon:         'concentric polygon spiral with chevron border',
-  yemen:           'bold angular star polygon with inner grid',
-  saudi:           'geometric diamond lattice with border frame',
-
-  // Europe — West
-  france:          'gothic pointed arch geometric tracery',
-  spain:           'mudéjar eight-pointed star with interlocking squares',
-  portugal:        'grid of alternating interlocked squares',
-  italy:           'circular rosette with radiating triangular segments',
-  germany:         'bold angular cross-hatch geometric grid',
-  austria:         'baroque oval medallion with concentric rings',
-  switzerland:     'angular plus sign with radiating concentric squares',
-  netherlands:     'diagonal grid with alternating diamond blocks',
-  belgium:         'bold diagonal stripe pattern with geometric border',
-
-  // Europe — North
-  sweden:          'nordic interlace knotwork geometric',
-  norway:          'viking angular knotwork interlace pattern',
-  denmark:         'circular interlace ring with crossing lines',
-  finland:         'angular Nordic star with concentric rings',
-
-  // Europe — East
-  poland:          'concentric square spiral with angular border',
-  russia:          'bold interlocking circle and square pattern',
-  ukraine:         'diamond grid with concentric angular rings',
-  romania:         'hexagonal border pattern with inner star',
-  hungary:         'bold angular cross with concentric ring border',
-  czech:           'circular geometric medallion with triangle grid',
-  bulgaria:        'angular chevron with interlocked diamond pattern',
-  serbia:          'bold cross with concentric square border',
-  croatia:         'checkerboard diamond pattern in circular frame',
-  greece:          'Greek meander border with concentric rings',
-
-  // UK / Ireland
-  'united kingdom':'Celtic triple spiral with angular interlace',
-  ireland:         'Celtic triskelion spiral geometric',
-
-  // Americas
-  'united states': 'art deco geometric starburst with concentric rings',
-  canada:          'bold hexagonal snowflake geometric',
-  mexico:          'stepped pyramid geometric with concentric rings',
-  brazil:          'bold geometric star with angular border',
-  argentina:       'radial sun-ray geometry without face',
-
-  // Asia
-  japan:           'circular Japanese mon geometric, single bold motif, extreme negative space',
-  china:           'square spiral key-fret pattern',
-  india:           'geometric jali lattice with octagonal stars',
-  'south korea':   'taeguk-inspired concentric curve geometry',
-
-  // Africa
-  'south africa':  'angular zulu geometric beadwork pattern',
-  ethiopia:        'bold cross-star geometric interlace',
-  ghana:           'angular adinkra-inspired geometric',
-  nigeria:         'angular geometric interlace border',
-
-  default:         'bold concentric rings with radial spoke pattern',
+const ORIGIN_METAPHOR: Record<string, string> = {
+  israel:          'interlocking eight-pointed star grid geometry, arabesque lattice symmetry',
+  morocco:         'zellige twelve-pointed star tessellation, interlocking polygon grid',
+  tunisia:         'hexagonal mosaic grid with alternating diamond geometry',
+  egypt:           'nested concentric square spiral, stepped diagonal geometry',
+  iraq:            'ancient stepped-grid geometry, interlocking angular zigzag',
+  iran:            'sixteen-point star arabesque grid, radial polygon symmetry',
+  turkey:          'anatolian geometric lattice with interlocking hexagonal tiles',
+  jordan:          'angular crossing diagonal grid with bold border frame',
+  lebanon:         'concentric polygon spiral with bold chevron border',
+  yemen:           'bold angular star polygon with inner concentric grid',
+  saudi:           'diamond lattice with alternating negative space grid',
+  poland:          'folk-art inspired symmetry, Wycinanki-style cut-paper geometric star',
+  russia:          'bold interlocking circle and square folk-pattern geometry',
+  ukraine:         'Pysanka-inspired diamond grid with angular concentric rings',
+  romania:         'angular folk-diamond border with inner star grid',
+  hungary:         'bold angular cross with concentric ring folk geometry',
+  france:          'Gothic tracery geometry, pointed arch grid pattern',
+  spain:           'Mudéjar eight-pointed star with interlocking square grid',
+  portugal:        'Azulejo alternating grid with interlocking square tiles',
+  italy:           'Renaissance circular rosette with radiating triangular segments',
+  germany:         'bold angular cross-hatch geometric grid with square frame',
+  netherlands:     'diagonal offset grid with bold diamond repeat pattern',
+  sweden:          'Norse interlace knotwork, angular braid geometry',
+  norway:          'Viking angular knotwork with bold border frame',
+  denmark:         'circular interlace ring with bold crossing line geometry',
+  finland:         'angular Nordic star with concentric ring symmetry',
+  greece:          'Greek meander key-fret border with concentric ring center',
+  'united kingdom':'Celtic triple spiral interlace, angular knotwork geometry',
+  ireland:         'Celtic triskelion triple spiral with bold stroke geometry',
+  japan:           'Japanese Mon style: single bold centered geometric motif, extreme negative space, radial circular symmetry',
+  china:           'square key-fret spiral border, interlocking angular grid',
+  india:           'geometric jali lattice with interlocking octagonal stars',
+  'south korea':   'bold concentric curve geometry, angular divided circle',
+  'united states': 'art deco radiating starburst geometry, concentric ring layers',
+  canada:          'bold hexagonal snowflake geometry with angular radial arms',
+  mexico:          'stepped Aztec pyramid geometry with concentric angular rings',
+  brazil:          'bold geometric starburst with angular concentric border',
+  argentina:       'radial sun-ray geometry, concentric bold rings without face',
+  'south africa':  'angular Zulu geometric beadwork, bold diamond grid pattern',
+  default:         'bold concentric rings with radial spoke symmetry geometry',
 };
 
-function getRegionGeometry(origins: string[]): string {
+function getOriginMetaphor(origins: string[]): string {
   for (const origin of origins) {
     const key = origin.toLowerCase().trim();
-    for (const [country, geo] of Object.entries(REGION_GEOMETRY)) {
-      if (key.includes(country)) return geo;
+    for (const [country, metaphor] of Object.entries(ORIGIN_METAPHOR)) {
+      if (key.includes(country)) return metaphor;
     }
   }
-  return REGION_GEOMETRY.default;
+  return ORIGIN_METAPHOR.default;
 }
 
-// ── Occupation → pure geometric motif ────────────────────────────────────────
+// ── Occupation → geometric metaphor ──────────────────────────────────────────
 
-const OCCUPATION_GEOMETRY: Record<string, string> = {
-  farmer:       'radial spoke wheel with twelve equal segments',
-  shepherd:     'concentric oval rings with uniform dot border',
-  fisherman:    'diamond grid lattice with curved crossing diagonals',
-  sailor:       'eight-point star with concentric ring border',
-  merchant:     'two symmetric triangles balanced on horizontal axis',
-  banker:       'nested squares rotated 45 degrees with diagonal lines',
-  craftsman:    'interlocking gear-tooth ring with inner hexagon',
-  blacksmith:   'bold diamond polygon with angular cross arms',
-  carpenter:    'mitered corner frame with diagonal inlay grid',
-  weaver:       'over-under diagonal lattice grid pattern',
-  potter:       'concentric circles with radial dividing spokes',
-  jeweler:      'faceted octagon with inner star geometry',
-  baker:        'bold pinwheel of eight equal triangular segments',
-  miner:        'bold X-chevron with concentric square border',
-  physician:    'bold plus geometry with concentric ring border',
-  scholar:      'two bold right-angle triangles forming chevron',
-  soldier:      'bold pentagonal shield geometry with chevron',
-  judge:        'symmetric balanced scale geometry, pure triangles',
-  artist:       'bold Fibonacci spiral geometry',
-  musician:     'concentric arc rings with equal spacing',
-  architect:    'bold semicircle arch with proportional grid',
-  engineer:     'bold twelve-tooth cog wheel geometry',
-  writer:       'angular diagonal spiral with bold strokes',
-  diplomat:     'two interlocked rings, perfectly balanced',
-  hunter:       'bold angular chevron with concentric ring border',
-  gardener:     'hexagonal grid with bold center diamond',
-  inventor:     'radial burst of lines with inner hexagon ring',
-  priest:       'concentric sunburst rings without cross or crescent',
-  default:      'bold interlocking concentric ring geometry',
+const OCCUPATION_METAPHOR: Record<string, string> = {
+  farmer:       'harvest cycle geometry: radial spoke wheel with twelve equal arc segments',
+  shepherd:     'pastoral cycle geometry: concentric oval rings with uniform dot rhythm',
+  fisherman:    'rhythmic water geometry: diamond wave grid with curved crossing arcs',
+  sailor:       'navigation geometry: eight-point radial star with concentric ring border',
+  merchant:     'exchange geometry: two symmetric triangles balanced on horizontal axis',
+  banker:       'value geometry: nested squares rotated 45 degrees, bold diagonal grid',
+  craftsman:    'craft geometry: interlocking gear-tooth ring with inner hexagon',
+  blacksmith:   'forge geometry: bold diamond polygon with angular cross arms',
+  carpenter:    'joinery geometry: mitered corner frame with diagonal inlay grid',
+  weaver:       'loom geometry: over-under diagonal lattice grid, interlaced pattern',
+  potter:       'wheel geometry: concentric circles with radial dividing spokes',
+  jeweler:      'facet geometry: octagonal star with inner radiating triangles',
+  baker:        'cycle geometry: bold pinwheel of eight equal triangular segments',
+  miner:        'excavation geometry: bold X-chevron with concentric square border',
+  physician:    'precision geometry: bold plus-cross with concentric ring border',
+  scholar:      'grid-based geometric patterns, mathematical proportion grid, angular chevron pair',
+  soldier:      'shield geometry: bold pentagonal form with inner chevron pattern',
+  judge:        'balance geometry: symmetric bisected circle with two equal arms',
+  artist:       'proportion geometry: bold Fibonacci spiral with concentric arcs',
+  musician:     'rhythmic wave geometry, concentric frequency arcs with equal spacing',
+  architect:    'structure geometry: bold arch with proportional grid framework',
+  engineer:     'mechanism geometry: bold twelve-tooth cog ring with inner hexagon',
+  writer:       'flow geometry: angular diagonal spiral with bold strokes',
+  diplomat:     'union geometry: two interlocked rings, perfectly symmetric balance',
+  hunter:       'trajectory geometry: bold angular chevron with concentric ring border',
+  gardener:     'growth geometry: hexagonal grid with bold center diamond',
+  inventor:     'discovery geometry: radial burst of lines with inner hexagon ring',
+  priest:       'radiant geometry: concentric sunburst rings, strictly no cross or crescent',
+  default:      'bold interlocking concentric ring geometry with radial symmetry',
 };
 
-function getOccupationGeometry(occupations: string[]): string {
+function getOccupationMetaphor(occupations: string[]): string {
   for (const occ of occupations) {
     const key = occ.toLowerCase();
-    for (const [k, geo] of Object.entries(OCCUPATION_GEOMETRY)) {
-      if (key.includes(k)) return geo;
+    for (const [k, metaphor] of Object.entries(OCCUPATION_METAPHOR)) {
+      if (key.includes(k)) return metaphor;
     }
   }
-  return OCCUPATION_GEOMETRY.default;
-}
-
-// ── Values → geometric abstract form ─────────────────────────────────────────
-
-const VALUE_GEOMETRY: Record<string, string> = {
-  resilience:  'solid triangle nested in concentric rings',
-  freedom:     'bold radial burst of equal lines from center',
-  harmony:     'perfectly balanced yin-yang spiral geometry',
-  loyalty:     'two interlocked hexagonal rings',
-  wisdom:      'bold hexagonal grid with inner octagon',
-  courage:     'bold diamond chevron with concentric border',
-  creativity:  'expanding Fibonacci spiral geometry',
-  justice:     'symmetric two-arm balance geometry',
-  prosperity:  'ascending staircase of bold rectangles, circular',
-  community:   'three interlocking circles, equal size',
-  honor:       'bold pointed shield geometry, angular center',
-  truth:       'bold circle divided by equal radial lines',
-  default:     'bold six-pointed geometric star with inner circle',
-};
-
-function getValueGeometry(values: string[]): string {
-  for (const val of values) {
-    const key = val.toLowerCase();
-    for (const [k, geo] of Object.entries(VALUE_GEOMETRY)) {
-      if (key.includes(k)) return geo;
-    }
-  }
-  return VALUE_GEOMETRY.default;
+  return OCCUPATION_METAPHOR.default;
 }
 
 // ── Style language ────────────────────────────────────────────────────────────
 
 const STYLE_LANGUAGE: Record<string, string> = {
-  japanese: 'Japanese mon style: single centered motif, extreme negative space, radial symmetry',
+  japanese: 'Japanese Mon style: single centered motif, extreme negative space, radial symmetry',
   modern:   'Swiss International Style: mathematical grid, precise angles, clean minimal geometry',
   ancient:  'ancient craftwork: interlaced angular knotwork, layered geometric depth',
-  abstract: 'pure abstract geometry: non-representational, balanced proportions',
+  abstract: 'pure abstract geometry: non-representational, balanced proportions, bold contrast',
 };
 
 function getStyleLanguage(style: string): string {
@@ -173,41 +119,19 @@ function getStyleLanguage(style: string): string {
   return STYLE_LANGUAGE.abstract;
 }
 
-// ── Absolute constraint block ─────────────────────────────────────────────────
+// ── Hard constraints (always appended) ───────────────────────────────────────
 
-const FORBIDDEN =
-  // Animals & nature
-  'ABSOLUTELY NO animals, NO birds, NO insects, NO fish, NO reptiles, NO mythical creatures, ' +
-  'NO human figures, NO faces, NO heads, NO hands, NO body parts, NO silhouettes of people, ' +
-  'NO plants, NO leaves, NO trees, NO flowers, NO vines, NO branches, NO roots, NO grass, ' +
-  // Religious — all faiths
-  'NO religious symbols of any religion or faith, ' +
-  'NO crosses, NO crucifixes, NO crescents, NO stars of David, NO menorahs, ' +
-  'NO Om symbols, NO dharma wheels, NO torii gates, NO yin-yang, NO ankh, ' +
-  'NO pentagrams, NO hexagrams, NO mandalas with spiritual meaning, ' +
-  'NO lotus flowers, NO sacred geometry with religious meaning, ' +
-  // National & political
-  'NO national flags, NO country emblems, NO national symbols, NO coats of arms, ' +
-  'NO political symbols, NO party symbols, NO government insignia, ' +
-  'NO military insignia, NO rank symbols, NO medals, ' +
-  // Gender & identity
-  'NO gender symbols, NO male symbols, NO female symbols, NO gender signs, ' +
-  'NO sexual imagery, NO body-related symbols, ' +
-  // Offensive & extremist
-  'NO swastikas, NO hate symbols, NO supremacist symbols, NO extremist imagery, ' +
-  'NO offensive cultural appropriation, NO colonial symbols, ' +
-  // Typography
-  'NO text, NO letters, NO numbers, NO words, NO initials, NO monograms, ' +
-  // Visual artifacts
-  'NO gradients, NO shading, NO shadows, NO background fills, NO noise, NO texture, NO halftone';
+const CONSTRAINTS =
+  'Strictly black and white monochrome, bold thick strokes minimum 2pt, ' +
+  'flat 2D vector, symmetrical circular composition, ' +
+  'NO text, NO letters, NO numbers, NO flags, NO national symbols, ' +
+  'NO religious symbols of any religion, NO crosses, NO crescents, ' +
+  'NO stars of David, NO pentagrams, NO gender symbols, ' +
+  'NO faces, NO human figures, NO animals, NO birds, NO plants, NO trees, ' +
+  'NO gradients, NO shadows, NO background fills, ' +
+  'geometric abstraction only, production-ready for 30mm round rubber stamp';
 
-const STAMP_REQUIREMENTS =
-  'flat black-on-white SVG logo, ' +
-  'bold strokes minimum 8px, clean crisp edges, ' +
-  'perfect circular composition, centered, ' +
-  'pure geometric abstract logo design';
-
-// ── Build 4 variant prompts ───────────────────────────────────────────────────
+// ── Build 4 prompts ───────────────────────────────────────────────────────────
 
 export function buildSealPrompts(profile: {
   origin:     string[];
@@ -215,24 +139,21 @@ export function buildSealPrompts(profile: {
   values:     string[];
   style:      string;
 }): string[] {
-  const regionGeo   = getRegionGeometry(profile.origin);
-  const occupGeo    = getOccupationGeometry(profile.occupation);
-  const valueGeo    = getValueGeometry(profile.values);
+  const originMeta  = getOriginMetaphor(profile.origin);
+  const occupMeta   = getOccupationMetaphor(profile.occupation);
   const styleLang   = getStyleLanguage(profile.style);
 
-  const base = `abstract geometric circular logo, ${STAMP_REQUIREMENTS}. Contains only geometric shapes: circles, rings, lines, polygons, triangles, spirals, interlace patterns. Zero figurative elements.`;
-
   return [
-    // Variant 1 — occupation geometry + chosen style
-    `${base} The logo contains: ${occupGeo}. ${styleLang}. Black lines on white background.`,
+    // Variant 1 — occupation metaphor + chosen style
+    `Abstract geometric family emblem. ${occupMeta}. ${styleLang}. ${CONSTRAINTS}.`,
 
-    // Variant 2 — values geometry + modern precision
-    `${base} The logo contains: ${valueGeo}. Swiss International Style, mathematical grid precision. Black lines on white background.`,
+    // Variant 2 — origin tradition + occupation metaphor
+    `Abstract geometric family emblem. ${originMeta}. ${occupMeta}. ${CONSTRAINTS}.`,
 
-    // Variant 3 — regional geometric tradition
-    `${base} The logo contains: ${regionGeo}. Ancient geometric craftwork, bold strokes, deep interlace. Black on white.`,
+    // Variant 3 — origin tradition + modern precision
+    `Abstract geometric family emblem. ${originMeta}. Swiss International Style mathematical grid precision. ${CONSTRAINTS}.`,
 
-    // Variant 4 — combined, symmetric
-    `${base} The logo contains: outer ring of ${regionGeo}, inner circle of ${occupGeo}. Perfectly symmetric. ${styleLang}. Black on white.`,
+    // Variant 4 — combined origin + occupation, symmetric
+    `Abstract geometric family emblem. Outer ring: ${originMeta}. Inner circle: ${occupMeta}. Perfectly symmetric concentric composition. ${styleLang}. ${CONSTRAINTS}.`,
   ];
 }
