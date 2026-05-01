@@ -99,12 +99,9 @@ async function callLeonardoAPI(prompt: string): Promise<string> {
     },
     body: JSON.stringify({
       prompt,
-      modelId: 'aa77f04e-3eec-4034-9c07-d0a6259b18c7', // Leonardo Lightning XL
       width: 1024,
       height: 1024,
       num_images: 1,
-      contrast: 3.5,
-      alchemy: false
     }),
   });
 
