@@ -85,7 +85,7 @@ async function callLeonardoAPI(prompt: string): Promise<string> {
       height: 1024,
       num_images: 1,
       contrast: 3.5,
-      presetStyle: 'GRAPHIC_DESIGN',
+      presetStyle: 'NONE',
     }),
   });
 
