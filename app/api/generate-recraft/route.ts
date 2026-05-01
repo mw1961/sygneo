@@ -9,37 +9,32 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // ── System prompt for Claude ──────────────────────────────────────────────────
 
-const CLAUDE_SYSTEM = `You are a Technical Production Engineer for Rubber Stamps and a Heritage Mark Designer.
+const CLAUDE_SYSTEM = `You are a geometric abstraction engine for rubber stamp design.
 
-The Goal: Generate 4 technical prompts for the Replicate API (Recraft V3) to produce a 30x30mm rubber stamp master — production-ready, bold, geometric.
+CRITICAL RULE: Your output prompts must contain ZERO recognizable real-world words — no country names, no occupation names, no people names, no place names, no object names. Only pure geometric vocabulary.
 
-Strict Manufacturing Rules:
-- Color: 100% Monochrome. Pure Black on Pure White. ABSOLUTELY NO grey, no gradients, no shading, no textures, no anti-aliasing.
-- Line Weight: Bold and thick lines only. Minimum 2mm visual thickness. Thin lines break during stamp production.
-- Composition: Simple, clean, balanced geometry. 3-4 basic geometric shapes combined into one solid emblem.
-- Shapes allowed: circles, rings, triangles, diamonds, polygons, straight lines, angular forms, interlocking geometric patterns.
+Your job: Translate family heritage data into 4 purely geometric descriptions.
 
-Input Logic — translate heritage into abstract geometry, NEVER literal objects:
-- "Watchmaker" → interlocking gear polygons, radial mechanical symmetry
-- "Agriculture" → radial spoke geometry, parallel arc segments
-- "Music" → concentric wave arcs, rhythmic geometric frequency
-- "Poland" → angular folk-star polygon symmetry
-- "Morocco" → geometric star tessellation pattern
-- "Scholar" → mathematical grid chevron geometry
+Translation examples (MANDATORY approach):
+- "Venezuela" → "radial sunburst with angular chevron border and diagonal grid"
+- "Hunter" → "angular trajectory lines with concentric ring target geometry"
+- "Morocco" → "twelve-point star tessellation with interlocking polygon grid"
+- "Scholar" → "mathematical proportion grid with angular chevron pair"
+- "Resilience" → "nested triangle inside concentric bold rings"
+- "Loyalty" → "two interlocked hexagonal rings"
 
-Strict Content Rules (Zero Tolerance):
-- NO religious symbols: no Stars of David, no crosses, no crescents, no ankh, no om
-- NO flags, NO national emblems, NO political symbols
-- NO text, NO letters, NO numbers, NO monograms
-- NO faces, NO animals, NO birds, NO plants, NO realistic objects
-- NO gender symbols, NO offensive imagery of any kind
-- NO thin/fine details that break during rubber stamp production
+Output 4 prompts using ONLY this vocabulary:
+- Shapes: circle, ring, triangle, diamond, hexagon, octagon, polygon, square, arc, spiral
+- Arrangements: concentric, radial, interlocking, nested, symmetric, grid, lattice
+- Qualities: bold, thick, angular, geometric, centered, balanced
 
-Output EXACTLY 4 prompts:
-REPLICATE_PROMPT_1: [occupation/heritage as bold geometric form]
-REPLICATE_PROMPT_2: [origin tradition as bold geometric pattern]
-REPLICATE_PROMPT_3: [values expressed as bold angular geometry]
-REPLICATE_PROMPT_4: [all elements combined, concentric layered composition, production-ready]`;
+Each prompt must be self-contained geometric instructions, nothing else.
+
+Output format — exactly 4 lines:
+REPLICATE_PROMPT_1: [geometric description only, 20-40 words]
+REPLICATE_PROMPT_2: [geometric description only, 20-40 words]
+REPLICATE_PROMPT_3: [geometric description only, 20-40 words]
+REPLICATE_PROMPT_4: [geometric description only, 20-40 words]`;
 
 // ── Ask Claude to generate 4 prompts ─────────────────────────────────────────
 
@@ -97,7 +92,7 @@ async function generatePromptsWithClaude(profile: {
 async function generateImage(prompt: string): Promise<string> {
   if (!REPLICATE_TOKEN) throw new Error('REPLICATE_API_TOKEN not configured');
 
-  const createRes = await fetch('https://api.replicate.com/v1/models/recraft-ai/recraft-v3/predictions', {
+  const createRes = await fetch('https://api.replicate.com/v1/models/recraft-ai/recraft-v3-svg/predictions', {
     method: 'POST',
     headers: {
       'Authorization': `Token ${REPLICATE_TOKEN}`,
@@ -107,8 +102,8 @@ async function generateImage(prompt: string): Promise<string> {
     body: JSON.stringify({
       input: {
         prompt,
-        style: 'digital_illustration/2d_art_poster',
-        aspect_ratio: '1:1',
+        size: '1024x1024',
+        style: 'line_art',
       },
     }),
   });
@@ -138,7 +133,18 @@ async function generateImage(prompt: string): Promise<string> {
   const output = pred.output;
   const url = Array.isArray(output) ? (output as string[])[0] : output as string;
   if (!url) throw new Error('No output URL');
-  return url;
+
+  // recraft-v3-svg returns SVG file URL — fetch it
+  const svgRes = await fetch(url);
+  if (!svgRes.ok) throw new Error(`Failed to fetch SVG: ${svgRes.status}`);
+  let svg = await svgRes.text();
+
+  // Force square viewBox, responsive size
+  svg = svg.replace(/<svg([^>]*)>/i, (_m, attrs: string) => {
+    const clean = attrs.replace(/\s+width="[^"]*"/g, '').replace(/\s+height="[^"]*"/g, '').replace(/\s+viewBox="[^"]*"/g, '');
+    return `<svg${clean} width="100%" height="100%" viewBox="0 0 1024 1024" preserveAspectRatio="xMidYMid meet">`;
+  });
+  return svg;
 }
 
 // ── POST handler ──────────────────────────────────────────────────────────────
@@ -168,11 +174,11 @@ export async function POST(request: NextRequest) {
 
     const seals = results.map((r, i) => ({
       variant:  i,
-      imageUrl: r.status === 'fulfilled' ? r.value : null,
+      svg:      r.status === 'fulfilled' ? r.value : null,
       error:    r.status === 'rejected'  ? String(r.reason) : null,
     }));
 
-    const succeeded = seals.filter(s => s.imageUrl !== null);
+    const succeeded = seals.filter(s => s.svg !== null);
     if (succeeded.length === 0) {
       const errors = seals.map(s => s.error).join(' | ');
       return NextResponse.json({ error: `All generations failed: ${errors}` }, { status: 500 });

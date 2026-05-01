@@ -116,9 +116,9 @@ export default function HomePage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Generation failed');
       // Recraft returns { seals: [{variant, imageUrl, error}] }
-      const sealOptions = (data.seals as {variant: number; imageUrl: string | null; error: string | null}[])
-        .filter(s => s.imageUrl)
-        .map(s => ({ pattern: `variant-${s.variant}`, shape: 'circle', svg: '', imageUrl: s.imageUrl! }));
+      const sealOptions = (data.seals as {variant: number; svg: string | null; error: string | null}[])
+        .filter(s => s.svg)
+        .map(s => ({ pattern: `variant-${s.variant}`, shape: 'circle', svg: s.svg!, imageUrl: undefined }));
       setSealHistory(prev => {
         const next = [...prev];
         next[v] = sealOptions;
@@ -301,10 +301,7 @@ export default function HomePage() {
               return (
                 <button key={idx} onClick={() => setChosen(isSelected ? null : idx)}
                   style={{ border: `2px solid ${isSelected ? C.gold : C.border}`, background: isSelected ? 'rgba(139,115,85,0.06)' : C.surface, padding: 16, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, transition: 'all 0.2s' }}>
-                  {seal.imageUrl
-                    ? <img src={seal.imageUrl} alt={`Option ${idx + 1}`} style={{ width: 200, height: 200, objectFit: 'contain', display: 'block' }} />
-                    : <div style={{ width: 200, height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: seal.svg }} />
-                  }
+                  <div style={{ width: 200, height: 200 }} dangerouslySetInnerHTML={{ __html: seal.svg }} />
                   <span style={{ fontSize: 9, color: isSelected ? C.gold : C.muted, letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>
                     {isSelected ? '✓ Selected' : `Option ${idx + 1}`}
                   </span>
