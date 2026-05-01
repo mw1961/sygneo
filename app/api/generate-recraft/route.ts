@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { buildSealPrompts } from '@/app/lib/prompt-builder';
 
 export const maxDuration = 60;
 
@@ -63,12 +64,28 @@ async function generatePromptsWithClaude(profile: {
   });
 
   const text = response.content[0].type === 'text' ? response.content[0].text : '';
+  console.log('Claude response:', text.slice(0, 500));
 
-  // Parse REPLICATE_PROMPT_1: ... through REPLICATE_PROMPT_4:
   const prompts: string[] = [];
+
+  // Try numbered format: REPLICATE_PROMPT_1: ...
   for (let i = 1; i <= 4; i++) {
-    const match = text.match(new RegExp(`REPLICATE_PROMPT_${i}:\\s*(.+)`));
+    const match = text.match(new RegExp(`REPLICATE_PROMPT_${i}:\\s*([^\\n]+)`));
     if (match) prompts.push(match[1].trim());
+  }
+
+  // Fallback: single REPLICATE_PROMPT: ...
+  if (prompts.length === 0) {
+    const single = text.match(/REPLICATE_PROMPT:\s*([^\n]+)/);
+    if (single) prompts.push(single[1].trim());
+  }
+
+  // Fallback: any line that looks like a prompt (longer than 40 chars, no header)
+  if (prompts.length === 0) {
+    const lines = text.split('\n')
+      .map(l => l.replace(/^[\d\.\-\*]+\s*/, '').trim())
+      .filter(l => l.length > 40 && !l.startsWith('REPLICATE') && !l.startsWith('Output'));
+    prompts.push(...lines.slice(0, 4));
   }
 
   if (prompts.length === 0) throw new Error('Claude returned no parseable prompts');
@@ -137,8 +154,14 @@ export async function POST(request: NextRequest) {
       style:      style ?? 'modern (clean, geometric)',
     };
 
-    // Step 1: Claude generates 4 optimized prompts
-    const prompts = await generatePromptsWithClaude(profile);
+    // Step 1: Claude generates 4 optimized prompts (fallback to static builder)
+    let prompts: string[];
+    try {
+      prompts = await generatePromptsWithClaude(profile);
+    } catch (claudeErr) {
+      console.warn('Claude failed, using static builder:', claudeErr);
+      prompts = buildSealPrompts(profile);
+    }
 
     // Step 2: Replicate generates images in parallel
     const results = await Promise.allSettled(prompts.map(p => generateImage(p)));
