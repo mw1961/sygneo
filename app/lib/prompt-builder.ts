@@ -176,14 +176,30 @@ function getStyleLanguage(style: string): string {
 // ── Absolute constraint block ─────────────────────────────────────────────────
 
 const FORBIDDEN =
-  'ABSOLUTELY NO animals, NO birds, NO insects, NO fish, NO reptiles, ' +
-  'NO human figures, NO faces, NO hands, NO body parts, ' +
-  'NO plants, NO leaves, NO trees, NO flowers, NO vines, NO branches, ' +
-  'NO flags, NO national emblems, NO country symbols, ' +
-  'NO religious symbols, NO crosses, NO crescents, NO stars of David, ' +
-  'NO pentagrams, NO swastikas, NO offensive imagery, ' +
-  'NO text, NO letters, NO numbers, NO words, ' +
-  'NO gradients, NO shading, NO background fills, NO noise, NO texture';
+  // Animals & nature
+  'ABSOLUTELY NO animals, NO birds, NO insects, NO fish, NO reptiles, NO mythical creatures, ' +
+  'NO human figures, NO faces, NO heads, NO hands, NO body parts, NO silhouettes of people, ' +
+  'NO plants, NO leaves, NO trees, NO flowers, NO vines, NO branches, NO roots, NO grass, ' +
+  // Religious — all faiths
+  'NO religious symbols of any religion or faith, ' +
+  'NO crosses, NO crucifixes, NO crescents, NO stars of David, NO menorahs, ' +
+  'NO Om symbols, NO dharma wheels, NO torii gates, NO yin-yang, NO ankh, ' +
+  'NO pentagrams, NO hexagrams, NO mandalas with spiritual meaning, ' +
+  'NO lotus flowers, NO sacred geometry with religious meaning, ' +
+  // National & political
+  'NO national flags, NO country emblems, NO national symbols, NO coats of arms, ' +
+  'NO political symbols, NO party symbols, NO government insignia, ' +
+  'NO military insignia, NO rank symbols, NO medals, ' +
+  // Gender & identity
+  'NO gender symbols, NO male symbols, NO female symbols, NO gender signs, ' +
+  'NO sexual imagery, NO body-related symbols, ' +
+  // Offensive & extremist
+  'NO swastikas, NO hate symbols, NO supremacist symbols, NO extremist imagery, ' +
+  'NO offensive cultural appropriation, NO colonial symbols, ' +
+  // Typography
+  'NO text, NO letters, NO numbers, NO words, NO initials, NO monograms, ' +
+  // Visual artifacts
+  'NO gradients, NO shading, NO shadows, NO background fills, NO noise, NO texture, NO halftone';
 
 const STAMP_REQUIREMENTS =
   'flat black-on-white vector, ' +
