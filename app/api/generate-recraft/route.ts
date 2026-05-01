@@ -1,55 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildSealPrompts } from '@/app/lib/prompt-builder';
 
-const REPLICATE_TOKEN = process.env.REPLICATE_API_TOKEN!;
-const MODEL = 'recraft-ai/recraft-v3-svg';
+export const maxDuration = 60; // Vercel: extend timeout to 60s
+
+const TOKEN = process.env.REPLICATE_API_TOKEN;
 
 async function generateSVG(prompt: string): Promise<string> {
+  if (!TOKEN) throw new Error('REPLICATE_API_TOKEN not configured');
+
   // Create prediction
-  const createRes = await fetch(`https://api.replicate.com/v1/models/${MODEL}/predictions`, {
+  const createRes = await fetch('https://api.replicate.com/v1/models/recraft-ai/recraft-v3-svg/predictions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${REPLICATE_TOKEN}`,
+      'Authorization': `Token ${TOKEN}`,
       'Content-Type': 'application/json',
-      'Prefer': 'wait=60',
+      'Prefer': 'wait',
     },
     body: JSON.stringify({
-      input: {
-        prompt,
-        size: '1024x1024',
-        style: 'vector_illustration/line_art',
-      },
+      input: { prompt, size: '1024x1024' },
     }),
   });
 
   if (!createRes.ok) {
     const err = await createRes.text();
-    throw new Error(`Replicate create failed: ${err}`);
+    throw new Error(`Replicate error ${createRes.status}: ${err}`);
   }
 
-  let prediction = await createRes.json() as { id: string; status: string; output?: string; error?: string };
+  let pred = await createRes.json() as {
+    id: string; status: string; output?: unknown; error?: string; urls?: { get: string };
+  };
 
-  // Poll until complete (fallback if Prefer:wait didn't resolve it)
-  let attempts = 0;
-  while (prediction.status !== 'succeeded' && prediction.status !== 'failed' && attempts < 30) {
-    await new Promise(r => setTimeout(r, 2000));
-    const pollRes = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
-      headers: { 'Authorization': `Bearer ${REPLICATE_TOKEN}` },
+  // Poll until done (max 50s)
+  const deadline = Date.now() + 50_000;
+  while (pred.status !== 'succeeded' && pred.status !== 'failed') {
+    if (Date.now() > deadline) throw new Error('Timeout waiting for generation');
+    await new Promise(r => setTimeout(r, 2500));
+    const pollRes = await fetch(pred.urls?.get ?? `https://api.replicate.com/v1/predictions/${pred.id}`, {
+      headers: { 'Authorization': `Token ${TOKEN}` },
     });
-    prediction = await pollRes.json() as typeof prediction;
-    attempts++;
+    pred = await pollRes.json() as typeof pred;
   }
 
-  if (prediction.status === 'failed' || !prediction.output) {
-    throw new Error(prediction.error ?? 'Generation failed');
-  }
+  if (pred.status === 'failed') throw new Error(pred.error ?? 'Prediction failed');
 
-  // Output is a URL to the SVG file — fetch it
-  const svgUrl = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output;
-  const svgRes = await fetch(svgUrl as string);
-  if (!svgRes.ok) throw new Error('Failed to fetch SVG output');
+  const output = pred.output;
+  const svgUrl = Array.isArray(output) ? (output as string[])[0] : output as string;
+  if (!svgUrl) throw new Error('No output URL returned');
 
-  return await svgRes.text();
+  const svgRes = await fetch(svgUrl);
+  if (!svgRes.ok) throw new Error(`Failed to fetch SVG: ${svgRes.status}`);
+  return svgRes.text();
 }
 
 export async function POST(request: NextRequest) {
@@ -63,23 +63,24 @@ export async function POST(request: NextRequest) {
       style:      style ?? 'modern (clean, geometric)',
     });
 
-    // Generate all 4 in parallel
+    // Generate 4 in parallel (within 60s timeout)
     const results = await Promise.allSettled(prompts.map(p => generateSVG(p)));
 
     const seals = results.map((r, i) => ({
       variant: i,
-      svg: r.status === 'fulfilled' ? r.value : null,
-      error: r.status === 'rejected' ? String(r.reason) : null,
+      svg:   r.status === 'fulfilled' ? r.value : null,
+      error: r.status === 'rejected'  ? String(r.reason) : null,
     }));
 
     const succeeded = seals.filter(s => s.svg !== null);
     if (succeeded.length === 0) {
-      return NextResponse.json({ error: 'All generations failed' }, { status: 500 });
+      const errors = seals.map(s => s.error).join(' | ');
+      return NextResponse.json({ error: `All generations failed: ${errors}` }, { status: 500 });
     }
 
     return NextResponse.json({ seals });
   } catch (err) {
-    console.error('generate-recraft error:', err);
-    return NextResponse.json({ error: 'Generation failed' }, { status: 500 });
+    console.error('generate-recraft:', err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }
