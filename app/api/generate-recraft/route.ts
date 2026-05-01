@@ -78,7 +78,15 @@ async function callLeonardoAPI(prompt: string): Promise<string> {
   const createRes = await fetch('https://cloud.leonardo.ai/api/rest/v1/generations', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, width: 1024, height: 1024, num_images: 1 }),
+    body: JSON.stringify({
+      prompt,
+      negative_prompt: 'realistic, photo, texture, noise, blur, gradients, shading, grey, color, animals, faces, text, letters, complex details, messy, chaotic, organic, photorealistic',
+      width: 1024,
+      height: 1024,
+      num_images: 1,
+      contrast: 3.5,
+      presetStyle: 'GRAPHIC_DESIGN',
+    }),
   });
 
   if (!createRes.ok) throw new Error(`Leonardo create failed ${createRes.status}: ${await createRes.text()}`);
