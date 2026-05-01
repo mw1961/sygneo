@@ -202,11 +202,10 @@ const FORBIDDEN =
   'NO gradients, NO shading, NO shadows, NO background fills, NO noise, NO texture, NO halftone';
 
 const STAMP_REQUIREMENTS =
-  'flat black-on-white vector, ' +
-  'minimum stroke width 2.5mm for 30mm stamp production, ' +
-  'bold clean edges, no hairlines, no thin details, ' +
-  'circular or square composition 30×30mm stamp ready, ' +
-  'pure SVG vector with solid fills only';
+  'flat black-on-white SVG logo, ' +
+  'bold strokes minimum 8px, clean crisp edges, ' +
+  'perfect circular composition, centered, ' +
+  'pure geometric abstract logo design';
 
 // ── Build 4 variant prompts ───────────────────────────────────────────────────
 
@@ -221,19 +220,19 @@ export function buildSealPrompts(profile: {
   const valueGeo    = getValueGeometry(profile.values);
   const styleLang   = getStyleLanguage(profile.style);
 
-  const base = `heraldic stamp emblem design, STRICTLY GEOMETRIC shapes only: circles rings polygons lines triangles interlace patterns, square format 1:1 aspect ratio, ${STAMP_REQUIREMENTS}, ${FORBIDDEN}`;
+  const base = `abstract geometric circular logo, ${STAMP_REQUIREMENTS}. Contains only geometric shapes: circles, rings, lines, polygons, triangles, spirals, interlace patterns. Zero figurative elements.`;
 
   return [
     // Variant 1 — occupation geometry + chosen style
-    `${base}. Central motif: ${occupGeo}. Style: ${styleLang}.`,
+    `${base} The logo contains: ${occupGeo}. ${styleLang}. Black lines on white background.`,
 
     // Variant 2 — values geometry + modern precision
-    `${base}. Central motif: ${valueGeo}. Style: Swiss mathematical precision, clean angular geometry.`,
+    `${base} The logo contains: ${valueGeo}. Swiss International Style, mathematical grid precision. Black lines on white background.`,
 
     // Variant 3 — regional geometric tradition
-    `${base}. Pattern: ${regionGeo}. Style: ancient craftwork geometric depth, bold strokes.`,
+    `${base} The logo contains: ${regionGeo}. Ancient geometric craftwork, bold strokes, deep interlace. Black on white.`,
 
     // Variant 4 — combined, symmetric
-    `${base}. Combined motif: ${occupGeo} integrated with ${valueGeo}. Perfectly symmetric composition. ${styleLang}.`,
+    `${base} The logo contains: outer ring of ${regionGeo}, inner circle of ${occupGeo}. Perfectly symmetric. ${styleLang}. Black on white.`,
   ];
 }

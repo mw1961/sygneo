@@ -17,7 +17,7 @@ async function generateSVG(prompt: string): Promise<string> {
       'Prefer': 'wait',
     },
     body: JSON.stringify({
-      input: { prompt, size: '1024x1024' },
+      input: { prompt, size: '1024x1024', style: 'vector_illustration/line_art' },
     }),
   });
 
