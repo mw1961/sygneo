@@ -31,6 +31,17 @@ function fallbackSvg(i: number): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="white"/>${d.border}${d.inner}</svg>`;
 }
 
+// Returns true if line segment (x1,y1)→(x2,y2) passes through (150,150) within 5px tolerance
+function segmentPassesThroughCenter(x1: number, y1: number, x2: number, y2: number): boolean {
+  const cx = 150, cy = 150, tol = 5;
+  const dx = x2 - x1, dy = y2 - y1;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq < 1) return false;
+  const t = Math.max(0, Math.min(1, ((cx - x1) * dx + (cy - y1) * dy) / lenSq));
+  const nearX = x1 + t * dx, nearY = y1 + t * dy;
+  return Math.abs(nearX - cx) < tol && Math.abs(nearY - cy) < tol;
+}
+
 // ── Route ────────────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
@@ -61,25 +72,34 @@ export async function POST(request: NextRequest) {
     const validated = parsed.svgs.map((svg, i) => {
       // Banned elements
       if (/<polygon/i.test(svg) || /<polyline/i.test(svg)) {
-        console.warn(`SVG ${i} contains banned polygon/polyline — fallback`);
+        console.warn(`SVG ${i} banned polygon/polyline — fallback`);
         return fallbackSvg(i);
       }
       // Triangle paths: M ... L ... L ... Z (exactly 3 vertices)
       if (/M[\d\s.,]+L[\d\s.,]+L[\d\s.,]+Z/i.test(svg.replace(/\s+/g, ' '))) {
-        console.warn(`SVG ${i} contains triangle path — fallback`);
+        console.warn(`SVG ${i} triangle path — fallback`);
         return fallbackSvg(i);
       }
-      // Lines passing through center (150,150) — crosshair / gun sight
+      // Lines passing through center (150,150) — proper segment intersection check
       for (const [lineTag] of svg.matchAll(/<line[^>]+>/gi)) {
         const x1 = parseFloat(lineTag.match(/x1="([\d.]+)"/)?.[1] ?? '0');
         const y1 = parseFloat(lineTag.match(/y1="([\d.]+)"/)?.[1] ?? '0');
         const x2 = parseFloat(lineTag.match(/x2="([\d.]+)"/)?.[1] ?? '0');
         const y2 = parseFloat(lineTag.match(/y2="([\d.]+)"/)?.[1] ?? '0');
-        if (
-          (Math.abs(x1 - 150) < 5 || Math.abs(x2 - 150) < 5) &&
-          (Math.abs(y1 - 150) < 5 || Math.abs(y2 - 150) < 5)
-        ) {
-          console.warn(`SVG ${i} contains crosshair line — fallback`);
+        if (segmentPassesThroughCenter(x1, y1, x2, y2)) {
+          console.warn(`SVG ${i} line through center — fallback`);
+          return fallbackSvg(i);
+        }
+      }
+      // Off-center isolated circles (lollipop / balloon shapes)
+      for (const [circleTag] of svg.matchAll(/<circle[^>]+>/gi)) {
+        const cx = parseFloat(circleTag.match(/cx="([\d.]+)"/)?.[1] ?? '150');
+        const cy = parseFloat(circleTag.match(/cy="([\d.]+)"/)?.[1] ?? '150');
+        const r  = parseFloat(circleTag.match(/\br="([\d.]+)"/)?.[1] ?? '150');
+        const distFromCenter = Math.sqrt((cx - 150) ** 2 + (cy - 150) ** 2);
+        // Small circle far from center = decoration dot is fine, but medium circle = lollipop
+        if (distFromCenter > 35 && r > 15 && r < 80) {
+          console.warn(`SVG ${i} off-center isolated circle (lollipop) — fallback`);
           return fallbackSvg(i);
         }
       }

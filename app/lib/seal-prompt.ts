@@ -148,6 +148,8 @@ const SECTION_H = `STRICTLY FORBIDDEN content:
 - NO offensive, conspiratorial, or militaristic imagery
 - NO masonic symbols (pyramids, triangles, compasses, all-seeing eye)
 - NO thin strokes under 9px
+- NO floating/isolated shapes: every inner shape must be centered at (150,150) or clearly part of a concentric/radial composition. A circle floating off-center connected only by a line = lollipop/balloon — FORBIDDEN.
+- NO open decorative strokes that look like eyebrows, hills, or random curves disconnected from the composition
 - All 4 designs MUST be visually distinct from each other — no two designs may use the same base shape combination`;
 
 // ── Assembled master prompt ───────────────────────────────────────────────────
