@@ -40,7 +40,7 @@ const SECTION_D = `STAMP PRODUCTION CONSTRAINTS — every shape must survive phy
 - Square border: <rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>
 - Minimum stroke-width="9" everywhere — thinner lines collapse in rubber/metal engraving
 - Only fill="black" or fill="none" + stroke="black" — no grays, no gradients
-- Max 5 shapes per SVG (including border) — more detail is lost at stamp scale (2–4 cm)
+- Max 5 shapes per SVG (including border) for Japanese/Modern/Abstract — Ancient style may use up to 6
 - Safe zone: stay within radius 108 for circle, 15px inset for square
 - All shapes must be CLOSED or clearly bounded — open paths that don't form a region will not engrave cleanly
 - Minimum gap between any two strokes: 6px — closer lines merge into a blob when pressed into rubber
@@ -171,11 +171,43 @@ export const SVG_SYSTEM = [
   SECTION_H,
 ].join('\n\n');
 
-// ── Per-batch shape vocabulary (rotates to force variety) ────────────────────
+// ── Per-batch composition templates (rotates to force variety) ───────────────
+// Each batch gives Claude specific, inspiring compositions to try — not just shape names.
 
 export const BATCH_VOCABULARY = [
-  `SHAPE VOCABULARY THIS BATCH: Use CURVED ARCS and SPIRALS as primary shapes. Build from <path> arc commands (A) and <circle> rings. Avoid hexagons, spoked wheels, and rotated rectangles.`,
-  `SHAPE VOCABULARY THIS BATCH: Use ROTATED RECTANGLES and NESTED SQUARES as primary shapes. Build from <rect transform="rotate(N 150 150)"> and nested squares at different angles. Avoid circles as the main motif.`,
-  `SHAPE VOCABULARY THIS BATCH: Use CONCENTRIC RINGS at VARIED SPACING as primary shapes. Rings of very different radii (e.g. r=40, r=80, r=108). Avoid hexagons, diamonds, and spoked wheels.`,
-  `SHAPE VOCABULARY THIS BATCH: Use RADIAL LINES and SEGMENTED ARCS as primary shapes. Build from <line> elements at angles (never through center) and partial <path> arcs. Avoid solid circles and rectangles as borders of inner motifs.`,
+  // Batch 0 — Arc tension compositions
+  `COMPOSITION DIRECTION THIS BATCH: Build designs with ARC TENSION — shapes that feel like they are pulling or wrapping around each other.
+Try compositions like:
+  • A large bold ring with 3 short heavy arcs radiating inward at 120° intervals (not through center)
+  • Two large arcs facing each other across the center, like parentheses ( ) rotated — separated by empty space
+  • A bold outer ring with one thick crescent arc nested inside, rotated 30°
+  • An asymmetric arc composition where a heavy 270° arc wraps almost all the way around, with a small dot accent
+Avoid: concentric rings as the only element, centered filled dots.`,
+
+  // Batch 1 — Layered square/diamond geometry
+  `COMPOSITION DIRECTION THIS BATCH: Build designs using LAYERED SQUARE AND DIAMOND GEOMETRY — precise, architectural, nested.
+Try compositions like:
+  • A square at 0° containing a smaller square at 45° (diamond) with visible space between them — clean nesting
+  • Two squares at 22° offset inside a ring, creating an octagonal rhythm without overlapping
+  • A bold diamond (rect rotated 45°) with two thin inner rings at different radii — no touching
+  • A large ring with a square inscribed inside it, touching the ring at 4 points (square corners touch ring)
+Avoid: more than 2 rotated rects, shapes that cross each other.`,
+
+  // Batch 2 — Radial and segmented compositions
+  `COMPOSITION DIRECTION THIS BATCH: Build designs using RADIAL RHYTHM — divisions of the circle that create visual rotation and energy.
+Try compositions like:
+  • 6 short bold lines arranged radially at 60° intervals, all starting at radius 55 and ending at radius 95 (none through center)
+  • A ring divided into 4 visible segments by 4 short arc paths, with a central accent shape
+  • 8 short tick marks arranged in a ring pattern (like clock marks), bold and evenly spaced
+  • An inner ring with 4 small square notches cut into it at cardinal points (use overlapping white rects)
+Avoid: concentric circles as main motif, centered dots.`,
+
+  // Batch 3 — Organic cultural geometry
+  `COMPOSITION DIRECTION THIS BATCH: Build designs inspired by CULTURAL CRAFT GEOMETRY — patterns drawn from weaving, tilework, and ancient ornament.
+Try compositions like:
+  • A Zellige-inspired ring: a bold outer ring with an inner octagon (8 sides, use path) — space between them
+  • Celtic-inspired triple arc: three equal arcs of 120° each, spaced evenly around center, each starting and ending at the same radius
+  • A meander-inspired composition: a square border with an inner square offset and one connecting L-shaped path
+  • A rosette: one bold ring with 6 small arcs arranged around it like petals, each arc curving outward
+Avoid: any shape that overlaps another, lines through center.`,
 ];
