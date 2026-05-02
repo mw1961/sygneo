@@ -47,7 +47,7 @@ const SECTION_D = `STAMP PRODUCTION CONSTRAINTS — every shape must survive phy
 - Max 5 shapes per SVG (including border)
 - Safe zone STRICT: inner shapes within radius 108 for circle, x:33-267 y:33-267 for square
   For rotated rects: corner distance from center = √((w/2)²+(h/2)²) must be ≤ 108 (circle) or ≤ 117 (square)
-- Minimum 6px gap between any two strokes
+- Minimum 6px gap between any two strokes — concentric rings must be at least 10px apart in radius (e.g. r=108, r=85, r=62 — not r=108, r=100, r=92)
 - NO overlapping shapes — nest inside each other or separate clearly, never crossing
 - NO connecting lines between shapes`;
 

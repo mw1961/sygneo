@@ -83,9 +83,17 @@ function validateSvg(svg: string, i: number): string {
   const rects3 = [...svg.matchAll(/<rect[^>]+transform="rotate/gi)].length;
   if (rects3 >= 3) { console.warn(`SVG ${i} 3+ rotated rects`); return fallbackSvg(i); }
 
+  // Too many concentric rings — will blur together in rubber
+  const allCircleR = [...svg.matchAll(/<circle[^>]+>/gi)].map(m => parseFloat(m[0].match(/\br="([\d.]+)"/)?.[1] ?? '0')).filter(r => r > 10).sort((a,b) => a-b);
+  if (allCircleR.length >= 4) {
+    // Check if any two rings are within 8px of each other
+    for (let j = 1; j < allCircleR.length; j++) {
+      if (allCircleR[j] - allCircleR[j-1] < 8) { console.warn(`SVG ${i} rings too close`); return fallbackSvg(i); }
+    }
+  }
+
   // Thin-only
   const circleCount = [...svg.matchAll(/<circle/gi)].length;
-  const pathCount   = [...svg.matchAll(/<path/gi)].length;
   const rectCount   = [...svg.matchAll(/<rect/gi)].length;
   if (circleCount >= 3 && rectCount === 0) {
     const paths = [...svg.matchAll(/d="([^"]+)"/gi)];
@@ -111,23 +119,16 @@ export async function POST(request: NextRequest) {
     const valuesStr     = Array.isArray(values)     ? values.join(', ')     : values;
 
     const varietyHint = VARIETY_HINTS[variant % VARIETY_HINTS.length];
-
-    const messages: { role: 'user' | 'assistant'; content: string }[] = [];
-
-    if (usedShapes) {
-      // Multi-turn: show Claude what was already generated, then ask for different designs
-      messages.push({ role: 'user', content: `Origin: ${originStr}\nOccupation: ${occupationStr}\nValues: ${valuesStr}\n\n${varietyHint}` });
-      messages.push({ role: 'assistant', content: `I already generated these designs (shapes used: ${usedShapes}). Now I will create 4 completely different compositions using different shape families.` });
-      messages.push({ role: 'user', content: `Correct. Now generate 4 new SVGs using DIFFERENT shapes from what was already shown. ${varietyHint}` });
-    } else {
-      messages.push({ role: 'user', content: `Origin: ${originStr}\nOccupation: ${occupationStr}\nValues: ${valuesStr}\n\n${varietyHint}` });
-    }
+    const avoidLine   = usedShapes ? `\nPrevious batch used: ${usedShapes} — use different shapes.` : '';
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 7000,
       system: SVG_SYSTEM,
-      messages,
+      messages: [{
+        role: 'user',
+        content: `Origin: ${originStr}\nOccupation: ${occupationStr}\nValues: ${valuesStr}${avoidLine}\n\n${varietyHint}`,
+      }],
     });
 
     const text = response.content[0].type === 'text' ? response.content[0].text : '';
