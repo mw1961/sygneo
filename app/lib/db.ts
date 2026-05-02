@@ -27,6 +27,7 @@ export interface ShippingAddress {
   streetNumber: string;
   apartment?: string;
   postalCode: string;
+  phone?: string;
   invoiceName?: string;
 }
 

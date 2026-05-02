@@ -25,7 +25,7 @@ interface HistoryEvent { status: string; at: string; note?: string }
 
 interface ShippingAddress {
   recipientName: string; country: string; street: string;
-  streetNumber: string; apartment?: string; postalCode: string; invoiceName?: string;
+  streetNumber: string; apartment?: string; postalCode: string; phone?: string; invoiceName?: string;
 }
 
 interface Selection {
@@ -179,8 +179,13 @@ export function ProductionCard({ sel: initial }: { sel: Selection }) {
                 {sel.shipping.apartment ? `, ${sel.shipping.apartment}` : ''}<br/>
                 {sel.shipping.postalCode} {sel.shipping.country}
               </p>
+              {sel.shipping.phone && (
+                <p style={{ margin: '4px 0 0', fontSize: 11, color: C.sub }}>
+                  📱 {sel.shipping.phone}
+                </p>
+              )}
               {sel.shipping.invoiceName && (
-                <p style={{ margin: '6px 0 0', fontSize: 11, color: C.sub }}>
+                <p style={{ margin: '4px 0 0', fontSize: 11, color: C.sub }}>
                   Invoice: {sel.shipping.invoiceName}
                 </p>
               )}

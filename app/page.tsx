@@ -48,20 +48,32 @@ const QUESTIONS = PROFILER_QUESTIONS.filter(q => q.id !== 'shape' && q.id !== 's
 
 const MAX_GENERATIONS = 2; // 2 batches × 6 seals = 12 total
 
-function ShipField({ label, k, required, placeholder, shipping, setShipping, C, inline }: {
+function ShipField({ label, k, required, placeholder, shipping, setShipping, C, inline, numeric, tel }: {
   label: string; k: string; required?: boolean; placeholder: string;
   shipping: Record<string, string>;
   setShipping: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-  C: Record<string, string>; inline?: boolean;
+  C: Record<string, string>; inline?: boolean; numeric?: boolean; tel?: boolean;
 }) {
+  const inputMode = numeric ? 'numeric' : tel ? 'tel' : 'text';
+  const type      = tel ? 'tel' : 'text';
+
+  function handleChange(val: string) {
+    // For numeric fields: strip non-digits
+    const cleaned = numeric ? val.replace(/\D/g, '') : val;
+    setShipping(s => ({ ...s, [k]: cleaned }));
+  }
+
   return (
     <div style={inline ? {} : { marginBottom: 14 }}>
       <label style={{ fontSize: 9, color: C.muted, letterSpacing: '0.15em', textTransform: 'uppercase',
         fontFamily: 'Helvetica, Arial, sans-serif', display: 'block', marginBottom: 5 }}>
         {label}{required && <span style={{ color: C.gold }}> *</span>}
       </label>
-      <input value={shipping[k] ?? ''}
-        onChange={e => setShipping(s => ({ ...s, [k]: e.target.value }))}
+      <input
+        type={type}
+        inputMode={inputMode}
+        value={shipping[k] ?? ''}
+        onChange={e => handleChange(e.target.value)}
         placeholder={placeholder}
         style={{ width: '100%', border: `1px solid ${C.border}`, padding: '9px 12px',
           fontSize: 14, fontFamily: 'Georgia, serif', background: C.bg,
@@ -92,7 +104,7 @@ export default function HomePage() {
   const [showModal, setShowModal]             = useState(false);
   const [shipping, setShipping]               = useState<Record<string, string>>({
     recipientName: '', country: '', street: '', streetNumber: '',
-    apartment: '', postalCode: '', invoiceName: '',
+    apartment: '', postalCode: '', phone: '', invoiceName: '',
   });
   const [termsAccepted, setTermsAccepted]     = useState(false);
 
@@ -235,8 +247,9 @@ export default function HomePage() {
             country:       shipping.country,
             street:        shipping.street,
             streetNumber:  shipping.streetNumber,
-            apartment:     shipping.apartment || undefined,
+            apartment:     shipping.apartment  || undefined,
             postalCode:    shipping.postalCode,
+            phone:         shipping.phone      || undefined,
             invoiceName:   shipping.invoiceName || undefined,
           },
         }),
@@ -458,13 +471,15 @@ export default function HomePage() {
             {/* Row: Street + Number */}
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12, marginBottom: 14 }}>
               <ShipField label="Street" k="street" required placeholder="Street name" shipping={shipping} setShipping={setShipping} C={C} inline />
-              <ShipField label="Number" k="streetNumber" required placeholder="12" shipping={shipping} setShipping={setShipping} C={C} inline />
+              <ShipField label="Number" k="streetNumber" required placeholder="12" numeric shipping={shipping} setShipping={setShipping} C={C} inline />
             </div>
             {/* Row: Apt + Postal */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-              <ShipField label="Apt / Floor" k="apartment" placeholder="Optional" shipping={shipping} setShipping={setShipping} C={C} inline />
-              <ShipField label="Postal Code" k="postalCode" required placeholder="ZIP / Post code" shipping={shipping} setShipping={setShipping} C={C} inline />
+              <ShipField label="Apt / Floor" k="apartment" placeholder="Optional" numeric shipping={shipping} setShipping={setShipping} C={C} inline />
+              <ShipField label="Postal Code" k="postalCode" required placeholder="e.g. 6100000" numeric shipping={shipping} setShipping={setShipping} C={C} inline />
             </div>
+            {/* Row: Phone (optional) */}
+            <ShipField label="Mobile Phone" k="phone" placeholder="+972 50 000 0000 (optional)" tel shipping={shipping} setShipping={setShipping} C={C} />
 
             {/* Invoice name */}
             <div style={{ marginBottom: 28 }}>
