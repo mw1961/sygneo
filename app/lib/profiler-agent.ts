@@ -104,6 +104,7 @@ export const PROFILER_QUESTIONS: ProfilerQuestion[] = [
       'Resilience', 'Freedom', 'Harmony', 'Loyalty',
       'Wisdom', 'Courage', 'Creativity', 'Justice',
       'Prosperity', 'Community', 'Honor', 'Truth',
+      'Open — let the design speak freely',
     ],
   },
   {

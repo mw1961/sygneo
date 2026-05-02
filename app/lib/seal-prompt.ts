@@ -102,6 +102,7 @@ VALUES metaphors:
   Community → three equal overlapping circles (connection, overlap)
   Honor → octagon inside circle with bold ring (protection + precision)
   Truth → three concentric perfect circles (unwavering consistency)
+  Open — let the design speak freely → fluid composition chosen freely by the designer based on origin and occupation alone — no value constraint
   Default → spiral with clear bold strokes`;
 
 // ── Section F: Maze rules + creativity directive ─────────────────────────────
