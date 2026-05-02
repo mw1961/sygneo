@@ -338,7 +338,7 @@ export default function HomePage() {
           {error && <p style={{ color: '#A0522D', fontSize: 13, marginTop: 16 }}>{error}</p>}
 
           <div style={{ display: 'flex', gap: 12, marginTop: 24, alignItems: 'center', flexWrap: 'wrap' }}>
-            <button onClick={handleGenerateMore} disabled={generating}
+            <button onClick={() => handleGenerateMore()} disabled={generating}
               style={{ padding: '10px 24px', border: `1px solid ${C.gold}`, background: 'transparent', color: generating ? C.muted : C.gold, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: generating ? 'not-allowed' : 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
               {generating ? 'Generating...' : '↻ Generate 4 More'}
             </button>
