@@ -26,20 +26,13 @@ The result must be UNIQUE to THIS specific family — not a generic geometric pa
 
 // ── Section C: Layout (FOUNDATIONAL — do not change order) ───────────────────
 
-const SECTION_C = `MANDATORY LAYOUT — output exactly 6 SVGs:
-- SVG 1: CIRCLE border — lead with ORIGIN geometry
-- SVG 2: SQUARE border — lead with OCCUPATION geometry
-- SVG 3: CIRCLE border — lead with VALUES geometry
+const SECTION_C = `MANDATORY LAYOUT — output exactly 4 SVGs as JSON {"svgs":[...]}:
+- SVG 1: CIRCLE border — lead with ORIGIN geometry, accent with occupation or values
+- SVG 2: SQUARE border — lead with OCCUPATION geometry, accent with origin or values
+- SVG 3: CIRCLE border — lead with VALUES geometry, accent with origin or occupation
 - SVG 4: SQUARE border — full synthesis of all three parameters
-- SVG 5: MAZE BRACKET — square border (see Maze rules below)
-- SVG 6: MAZE BRACKET — square border, different from SVG 5
 
-⚠ SHAPE DIVERSITY RULE — THIS OVERRIDES THE METAPHOR LIBRARY:
-SVGs 1–4 must each use a DIFFERENT primary shape family. You may not use the same primary shape in two SVGs.
-The four shape families are: (A) ARCS & CURVES  (B) ROTATED RECTANGLES  (C) RADIAL LINES  (D) CONCENTRIC RINGS
-Assign one family per SVG — no repeats. The BATCH ASSIGNMENTS in the user message specify which family goes to which SVG.
-The metaphor library gives you the MEANING to encode — but the BATCH ASSIGNMENT overrides which SHAPE to use.
-Example: "Craftsman → diamond" is the meaning. But if SVG 1 is assigned ARCS, you encode the craftsman meaning using arcs, not a diamond.`;
+VARIETY RULE: SVGs 1–4 must each use a different primary shape. Do not repeat the same base motif across SVGs.`;
 
 // ── Section D: Stamp production constraints (FOUNDATIONAL — never relax) ──────
 
@@ -251,8 +244,11 @@ export const SVG_SYSTEM = [
 // Rules: each SVG in a batch gets a different primary shape type, assigned explicitly.
 // Claude must follow the assignment — it is not a suggestion.
 
+// Archived batch assignments — kept for reference but not used
+// export const BATCH_VOCABULARY_ARCHIVED = [...];
+
 export const BATCH_VOCABULARY = [
-  // Batch 0
+  // Batch 0 — placeholder (variety now handled via VARIETY_HINTS in route.ts)
   `MANDATORY COMPOSITION ASSIGNMENTS FOR THIS BATCH — follow exactly, do not substitute:
 
 SVG 1 (circle border): ARCS ONLY — draw 2–3 bold partial arcs (path A command) of different radii and sweep angles. No complete rings. No rotated rects. Example: one 200° arc at r=80, one 120° arc at r=50 offset 90°.
