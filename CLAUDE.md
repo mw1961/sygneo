@@ -205,3 +205,55 @@ To re-enable: uncomment `SECTION_F` styles in `app/lib/seal-prompt.ts` and resto
 4. `values` — multiselect 2–3 values
 
 *(style and shape questions removed — style is free, shape is fixed per column)*
+
+---
+
+## Legal, Privacy & Compliance (PERMANENT — never remove)
+
+### Pages
+- **`/terms`** — Terms of Use + Privacy Policy (combined page)
+- Link appears in confirmation modal with mandatory consent checkbox
+
+### GDPR & International Privacy Compliance
+- **Lawful basis:** Contractual necessity (order fulfilment)
+- **Data minimisation:** only name, address, family profile, optional notes collected
+- **No third-party sharing** except courier for delivery — explicitly stated in policy
+- **No tracking cookies** — only essential session cookie for admin auth
+- **No advertising or profiling** — no analytics scripts
+- **Retention:** 3 years maximum, then permanent deletion
+- **Data subject rights:** access, rectification, erasure, portability, objection — contact hello@sygneo.com
+- **Children:** service not directed to under-16s
+
+### Consent
+- Confirmation modal requires explicit checkbox: "I have read and agree to Terms of Use & Privacy Policy"
+- Checkbox records agreement to: terms, privacy policy, no-ink shipping notice, variable delivery times
+- `termsAccepted` state must be `true` before `handleConfirm` can proceed
+
+### Shipping Disclaimer (must always be visible)
+- Stamp ships WITHOUT ink — postal/export regulations
+- No guaranteed delivery date — postal delays, customs, holidays
+- Incorrect address = re-shipping cost on customer
+
+### Security Headers (next.config.ts — never remove)
+- `X-Frame-Options: SAMEORIGIN` — prevents clickjacking
+- `X-Content-Type-Options: nosniff` — prevents MIME sniffing
+- `Strict-Transport-Security` — enforces HTTPS for 2 years
+- `Content-Security-Policy` — restricts resource origins
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy` — disables camera, mic, geolocation
+
+### Accessibility (WCAG 2.1 AA — maintain always)
+- `lang="en"` on `<html>` element
+- All interactive elements have accessible labels (`aria-label`, `aria-required`)
+- Form fields have associated `<label>` elements
+- Color contrast: gold `#8B7355` on white `#FFFFFF` = 3.8:1 (AA for large text)
+- All images/SVGs use `dangerouslySetInnerHTML` — add `role="img"` and `aria-label` if SVGs become `<img>` tags
+- Keyboard navigation: all buttons and links are natively focusable
+- No content relies solely on color to convey meaning
+- Error messages are text (not color only)
+
+### Data Storage Security
+- Upstash Redis: encrypted at rest + in transit (TLS)
+- Vercel hosting: SOC 2 Type II compliant
+- Admin routes protected by HMAC session cookie (`app/lib/admin-auth.ts`)
+- No sensitive data logged to console in production

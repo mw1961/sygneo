@@ -72,6 +72,7 @@ export default function HomePage() {
     recipientName: '', country: '', street: '', streetNumber: '',
     apartment: '', postalCode: '', invoiceName: '',
   });
+  const [termsAccepted, setTermsAccepted]     = useState(false);
 
   const genLimitReached = genCount >= MAX_GENERATIONS;
 
@@ -183,7 +184,8 @@ export default function HomePage() {
   }
 
   const shippingValid = shipping.recipientName.trim() && shipping.country.trim() &&
-    shipping.street.trim() && shipping.streetNumber.trim() && shipping.postalCode.trim();
+    shipping.street.trim() && shipping.streetNumber.trim() && shipping.postalCode.trim() &&
+    termsAccepted;
 
   async function handleConfirm() {
     if (chosen === null || !shippingValid) return;
@@ -504,6 +506,21 @@ export default function HomePage() {
                   fontSize: 14, fontFamily: 'Georgia, serif', background: C.bg,
                   color: C.text, outline: 'none', boxSizing: 'border-box' }} />
             </div>
+
+            {/* Terms consent */}
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 20, cursor: 'pointer' }}>
+              <input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)}
+                aria-required="true"
+                style={{ marginTop: 3, width: 16, height: 16, cursor: 'pointer', accentColor: C.gold }} />
+              <span style={{ fontSize: 12, color: C.sub, lineHeight: 1.6 }}>
+                I have read and agree to the{' '}
+                <a href="/terms" target="_blank" rel="noopener noreferrer"
+                  style={{ color: C.gold, textDecoration: 'underline' }}>
+                  Terms of Use &amp; Privacy Policy
+                </a>
+                . I understand my stamp will arrive <strong>without ink</strong> and that delivery dates may vary.
+              </span>
+            </label>
 
             {error && <p style={{ color: '#A0522D', fontSize: 13, marginBottom: 16 }}>{error}</p>}
 
