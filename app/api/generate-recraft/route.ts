@@ -55,21 +55,33 @@ function segmentPassesThroughCenter(x1: number, y1: number, x2: number, y2: numb
 
 export async function POST(request: NextRequest) {
   try {
-    const { origin, occupation, values, variant = 0 } = await request.json();
+    const { origin, occupation, values, variant = 0, usedShapes = '' } = await request.json();
 
     const batchInstruction = BATCH_VOCABULARY[variant % BATCH_VOCABULARY.length];
+
+    const avoidLine = usedShapes
+      ? `\n\nALREADY SHOWN TO CUSTOMER — DO NOT REPEAT THESE SHAPE FAMILIES:\n${usedShapes}\nEach new SVG MUST use a completely different primary shape from any already shown.`
+      : '';
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 6144,
       system: SVG_SYSTEM,
-      messages: [{
-        role: 'user',
-        content: `Origin: ${Array.isArray(origin) ? origin.join(', ') : origin}\nOccupation: ${Array.isArray(occupation) ? occupation.join(', ') : occupation}\nValues: ${Array.isArray(values) ? values.join(', ') : values}\n\n${batchInstruction}`,
-      }],
+      messages: [
+        {
+          role: 'user',
+          content: `Origin: ${Array.isArray(origin) ? origin.join(', ') : origin}\nOccupation: ${Array.isArray(occupation) ? occupation.join(', ') : occupation}\nValues: ${Array.isArray(values) ? values.join(', ') : values}${avoidLine}\n\n${batchInstruction}`,
+        },
+        {
+          role: 'assistant',
+          content: '{"svgs":["<svg',  // prefill forces Claude to start outputting JSON immediately
+        },
+      ],
     });
 
-    const text = response.content[0].type === 'text' ? response.content[0].text : '';
+    const rawText = response.content[0].type === 'text' ? response.content[0].text : '';
+    // Restore the prefill prefix that was stripped from the response
+    const text = '{"svgs":["<svg' + rawText;
 
     const jsonMatch = text.match(/\{[\s\S]*"svgs"[\s\S]*\}/);
     if (!jsonMatch) throw new Error('No JSON in response');

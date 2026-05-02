@@ -156,6 +156,20 @@ export default function HomePage() {
     else setGenerating(true);
     setError('');
     try {
+      // Summarise shapes already shown so Claude avoids them
+      const usedShapes = allSeals.slice(0, 4).map((s, i) => {
+        const svg = s.svg;
+        const hasRotatedRect = /transform="rotate/.test(svg);
+        const circleCount    = (svg.match(/<circle/g) ?? []).length;
+        const hasLines       = /<line/.test(svg);
+        const hasArcPath     = /\bA\b/.test(svg);
+        if (hasLines)         return `SVG${i+1}: radial lines`;
+        if (hasRotatedRect)   return `SVG${i+1}: rotated rect/diamond`;
+        if (hasArcPath)       return `SVG${i+1}: arc path`;
+        if (circleCount >= 3) return `SVG${i+1}: concentric rings`;
+        return `SVG${i+1}: circles`;
+      }).join(', ');
+
       const res = await fetch('/api/generate-recraft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -164,6 +178,7 @@ export default function HomePage() {
           occupation: Array.isArray(currentAnswers.occupation) ? currentAnswers.occupation : [profile.roots.historicOccupation],
           values:     profile.values,
           variant:    v,
+          usedShapes: isFirst ? '' : usedShapes,
         }),
       });
       const data = await res.json();
