@@ -167,7 +167,7 @@ export default function HomePage() {
     const next = variant + 1;
     setVariant(next);
     if (styleOverride) setActiveStyle(styleOverride);
-    await fetchMoreSeals(answers, next, false, styleOverride ?? activeStyle || undefined);
+    await fetchMoreSeals(answers, next, false, (styleOverride ?? activeStyle) || undefined);
   }
 
   async function handleConfirm() {
