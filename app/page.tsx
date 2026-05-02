@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, type ReactElement } from 'react';
 import { PROFILER_QUESTIONS, buildProfile } from './lib/profiler-agent';
 import type { ProfilerQuestion } from './lib/profiler-agent';
 
@@ -436,7 +436,7 @@ export default function HomePage() {
               { key: 'streetNumber',  label: 'Number',          placeholder: '12', required: true },
               { key: 'apartment',     label: 'Apt / Floor',     placeholder: 'Optional' },
               { key: 'postalCode',    label: 'Postal Code',     placeholder: 'ZIP / Post code', required: true },
-            ].reduce<JSX.Element[]>((rows, field, i, arr) => {
+            ].reduce<ReactElement[]>((rows, field, i, arr) => {
               if (field.full) {
                 rows.push(
                   <div key={field.key} style={{ marginBottom: 14 }}>
