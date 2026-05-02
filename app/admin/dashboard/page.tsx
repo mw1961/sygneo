@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+﻿import { redirect } from 'next/navigation';
 import { isAdminAuthenticated } from '@/app/lib/admin-auth';
 import { redis } from '@/app/lib/db';
 import { ProductionCard } from './ProductionPanel';
@@ -23,7 +23,7 @@ const STATUS_ORDER: ProductionStatus[] = [
 ];
 
 const STATUS_COLOR: Record<string, string> = {
-  pending: '#B0A898', vector_ready: '#8B7355', vector_approved: '#1B6B4A',
+  pending: '#7A6E64', vector_ready: '#8B7355', vector_approved: '#1B6B4A',
   sent_to_manufacturer: '#4A6B8B', in_production: '#6B4A8B',
   shipped: '#8B6B1B', delivered: '#1B4332',
 };
@@ -48,14 +48,14 @@ export default async function AdminDashboard() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
           marginBottom: 40, borderBottom: '1px solid #DDD8D0', paddingBottom: 24 }}>
           <div>
-            <h1 style={{ fontSize: 30, fontWeight: 300, letterSpacing: '0.4em', margin: 0 }}>SYGNEO</h1>
-            <p style={{ fontSize: 10, letterSpacing: '0.3em', color: '#8B7355', textTransform: 'uppercase',
+            <h1 style={{ fontSize: 34, fontWeight: 300, letterSpacing: '0.4em', margin: 0 }}>SYGNEO</h1>
+            <p style={{ fontSize: 12, letterSpacing: '0.3em', color: '#8B7355', textTransform: 'uppercase',
               margin: '6px 0 0', fontFamily: 'Helvetica, Arial, sans-serif' }}>Production Dashboard</p>
           </div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
             <form action="/api/admin/logout" method="POST">
               <button type="submit" style={{ fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase',
-                color: '#B0A898', background: 'none', border: 'none', cursor: 'pointer',
+                color: '#7A6E64', background: 'none', border: 'none', cursor: 'pointer',
                 fontFamily: 'Helvetica, Arial, sans-serif' }}>Logout</button>
             </form>
           </div>
@@ -66,9 +66,9 @@ export default async function AdminDashboard() {
           {STATUS_ORDER.map(s => (
             <div key={s} style={{ border: `1px solid ${STATUS_COLOR[s]}30`, padding: '16px 12px',
               background: '#FFFFFF', textAlign: 'center' }}>
-              <p style={{ fontSize: 28, fontWeight: 200, margin: '0 0 4px',
+              <p style={{ fontSize: 36, fontWeight: 200, margin: '0 0 4px',
                 color: counts[s] > 0 ? STATUS_COLOR[s] : '#DDD8D0' }}>{counts[s]}</p>
-              <p style={{ fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase',
+              <p style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase',
                 color: STATUS_COLOR[s], margin: 0, fontFamily: 'Helvetica, Arial, sans-serif',
                 lineHeight: 1.3 }}>{s.replace(/_/g, ' ')}</p>
             </div>
@@ -76,14 +76,14 @@ export default async function AdminDashboard() {
         </div>
 
         {/* Orders */}
-        <p style={{ fontSize: 10, letterSpacing: '0.3em', textTransform: 'uppercase',
+        <p style={{ fontSize: 12, letterSpacing: '0.3em', textTransform: 'uppercase',
           color: '#8B7355', marginBottom: 20, fontFamily: 'Helvetica, Arial, sans-serif' }}>
           Orders — {selections.length} total
         </p>
 
         {selections.length === 0 ? (
           <div style={{ border: '1px solid #DDD8D0', padding: 32, background: '#FFFFFF' }}>
-            <p style={{ color: '#B0A898', fontSize: 14, margin: 0 }}>
+            <p style={{ color: '#7A6E64', fontSize: 14, margin: 0 }}>
               No selections yet. Clients will appear here after confirming their mark.
             </p>
           </div>
@@ -95,3 +95,4 @@ export default async function AdminDashboard() {
     </main>
   );
 }
+
