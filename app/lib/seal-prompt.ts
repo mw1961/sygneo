@@ -49,7 +49,8 @@ const SECTION_D = `STAMP PRODUCTION CONSTRAINTS — every shape must survive phy
 - Safe zone: stay within radius 108 for circle, 15px inset for square
 - All shapes must be CLOSED or clearly bounded — open paths that don't form a region will not engrave cleanly
 - Minimum gap between any two strokes: 6px — closer lines merge into a blob when pressed into rubber
-- NO overlapping shapes: shapes must never cross or intersect each other. Every shape must occupy its own region of space. Two rotated rects that cross each other create tiny triangular gaps that collapse in rubber engraving — FORBIDDEN. Instead, nest shapes inside one another (one fits fully inside the other) or place them side by side with clear separation.`;
+- NO overlapping shapes: shapes must never cross or intersect each other. Every shape must occupy its own region of space. Two rotated rects that cross each other create tiny triangular gaps that collapse in rubber engraving — FORBIDDEN. Instead, nest shapes inside one another (one fits fully inside the other) or place them side by side with clear separation.
+- NO connecting lines between shapes: never draw <line> or <path> segments that run from one shape to another (e.g. from corners of an outer square to corners of an inner diamond). These always create an X or star at the center — FORBIDDEN. Shapes must be self-contained; connections between them are not allowed.`;
 
 // ── Section E: Visual metaphor library (extend freely, never remove) ──────────
 
@@ -122,7 +123,7 @@ MAZE RULES (SVGs 5–6 only):
 
 PLACEMENT SYSTEM — divide the interior into a strict 4×4 grid of 56px cells:
   Cell origins: x ∈ {38, 94, 150, 206}  ×  y ∈ {38, 94, 150, 206}
-  Place ONE bracket per cell. Skip 4-6 cells (leave them empty) to create breathing room.
+  Place ONE bracket per cell. Skip only 2-3 cells (leave them empty) — fill 13-14 of the 16 cells for a dense, rich pattern. The composition should feel full, like a wax seal texture, not sparse.
   Each bracket is drawn relative to its cell origin (cx, cy):
     L-open-right:  M cx cy      L cx cy+30    L cx+30 cy+30
     L-open-left:   M cx+30 cy   L cx+30 cy+30 L cx cy+30
@@ -138,7 +139,7 @@ CRITICAL RULES — no bracket may touch or overlap another:
   • No two subpaths in the path may share any x,y coordinate range
   • stroke-width="11" means each stroke occupies 5.5px on each side — keep this in mind for the 26px buffer
 
-Mix of bracket types: use all 4 L-orientations + 2 C-brackets + 1 dash across the 10-12 placed brackets.
+Mix of bracket types: use all 4 L-orientations + 3-4 C-brackets + 2 dashes across the 13-14 placed brackets.
 SVG 6 must use a DIFFERENT selection of cells than SVG 5 (different empty/filled pattern).`;
 
 // ── Section G: Allowed elements (FOUNDATIONAL — never add polygon/ellipse) ────
