@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import { SVG_SYSTEM } from '@/app/lib/seal-prompt';
+import { SVG_SYSTEM, VARIETY_HINTS } from '@/app/lib/seal-prompt';
 import { generateMazeSvg } from '@/app/lib/maze-generator';
 
 export const maxDuration = 60;
