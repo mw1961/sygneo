@@ -12,14 +12,21 @@ export async function POST(request: NextRequest) {
     }
 
     const id = `sel_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const now = new Date().toISOString();
+
     const selection: SealSelection = {
       id,
-      createdAt: new Date().toISOString(),
+      createdAt: now,
       profile,
       sealSvg,
+      productionSvg: sealSvg, // initially same as customer selection
       sealIndex,
       notes: notes ?? '',
-      status: 'pending',
+      status: 'vector_ready',  // SVG is already a vector — ready immediately
+      history: [
+        { status: 'pending',      at: now },
+        { status: 'vector_ready', at: now, note: 'SVG auto-saved on customer confirmation' },
+      ],
     };
 
     await redis.set(`sygneo:selection:${id}`, JSON.stringify(selection));
@@ -34,7 +41,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const ids = await redis.lrange('sygneo:selections', 0, 49);
+    const ids = await redis.lrange('sygneo:selections', 0, 99);
     if (!ids || ids.length === 0) return NextResponse.json({ selections: [] });
 
     const raw = await Promise.all(ids.map(id => redis.get(`sygneo:selection:${id}`)));
@@ -46,22 +53,5 @@ export async function GET() {
   } catch (err) {
     console.error('get-selections error:', err);
     return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
-  }
-}
-
-export async function PATCH(request: NextRequest) {
-  try {
-    const { id, status } = await request.json();
-    const raw = await redis.get(`sygneo:selection:${id}`);
-    if (!raw) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-
-    const selection = (typeof raw === 'string' ? JSON.parse(raw) : raw) as SealSelection;
-    selection.status = status;
-    await redis.set(`selection:${id}`, JSON.stringify(selection));
-
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    console.error('patch-selection error:', err);
-    return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
   }
 }

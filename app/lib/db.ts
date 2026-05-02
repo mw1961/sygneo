@@ -5,6 +5,21 @@ export const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
+export type ProductionStatus =
+  | 'pending'
+  | 'vector_ready'
+  | 'vector_approved'
+  | 'sent_to_manufacturer'
+  | 'in_production'
+  | 'shipped'
+  | 'delivered';
+
+export interface ProductionEvent {
+  status: ProductionStatus;
+  at: string;
+  note?: string;
+}
+
 export interface SealSelection {
   id: string;
   createdAt: string;
@@ -17,7 +32,12 @@ export interface SealSelection {
     inkColor: string;
   };
   sealSvg: string;
+  productionSvg?: string;
   sealIndex: number;
   notes: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: ProductionStatus;
+  productionNotes?: string;
+  manufacturerRef?: string;
+  trackingNumber?: string;
+  history?: ProductionEvent[];
 }
