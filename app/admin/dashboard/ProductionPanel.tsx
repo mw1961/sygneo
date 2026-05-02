@@ -71,8 +71,9 @@ export function ProductionCard({ sel: initial }: { sel: Selection }) {
   const [prodNotes, setProdNotes] = useState(initial.productionNotes ?? '');
   const [mfgRef, setMfgRef]       = useState(initial.manufacturerRef  ?? '');
   const [tracking, setTracking]   = useState(initial.trackingNumber   ?? '');
-  const [stampSize, setStampSize] = useState(40);
-  const [copied, setCopied]       = useState(false);
+  const [stampSize, setStampSize]     = useState(40);
+  const [copied, setCopied]           = useState(false);
+  const [copiedBrief, setCopiedBrief] = useState(false);
 
   async function save() {
     setSaving(true);
@@ -91,6 +92,86 @@ export function ProductionCard({ sel: initial }: { sel: Selection }) {
     navigator.clipboard.writeText(svg).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  function copyManufacturerBrief() {
+    const filename = `sygneo-${sel.id}-${stampSize}mm.svg`;
+    const date = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+    const brief = `REQUEST FOR QUOTATION — Custom Rubber Stamp
+Sygneo Heritage Stamps | hello@sygneo.com
+Date: ${date}
+Order Reference: ${sel.id}
+
+────────────────────────────────────────
+DESIGN FILE
+────────────────────────────────────────
+File: ${filename}
+Format: SVG vector · viewBox 300×300 · Physical size: ${stampSize}mm × ${stampSize}mm
+Please use this file as the sole source for engraving. Do not scale or alter proportions.
+
+────────────────────────────────────────
+PRODUCT SPECIFICATIONS
+────────────────────────────────────────
+Product type:   Traditional rubber stamp with handle (no built-in ink — for use with external ink pad)
+Stamp face:     ${stampSize}mm × ${stampSize}mm (exact)
+Handle:         High-quality polished wood (preferred) or clear acrylic — please advise
+Rubber type:    Laser-engraved natural or synthetic rubber
+Ink colour:     ${sel.profile.inkColor} (for customer reference only — stamp ships without ink)
+
+────────────────────────────────────────
+ENGRAVING SPECIFICATIONS
+────────────────────────────────────────
+Method:         Laser engraving
+Depth:          Minimum 1.2mm — Maximum 1.5mm
+                (background must not contact paper when stamping)
+Edge quality:   Sharp and crisp — design is a precision geometric matrix
+All raised elements (lines/shapes) must be clean with no burring
+
+────────────────────────────────────────
+ASSEMBLY
+────────────────────────────────────────
+- Rubber mounted flush and centred on handle
+- Thin foam cushioning layer between rubber and mount (for even ink distribution)
+- No visible misalignment
+
+────────────────────────────────────────
+CUSTOMER PROFILE (for design context)
+────────────────────────────────────────
+Origin:     ${sel.profile.origin}
+Occupation: ${sel.profile.occupation}
+Values:     ${sel.profile.values?.join(', ')}
+${sel.notes ? `Designer notes: ${sel.notes}` : ''}
+
+────────────────────────────────────────
+SHIPPING
+────────────────────────────────────────
+Ship to:
+  ${sel.shipping?.recipientName ?? ''}
+  ${sel.shipping?.street ?? ''} ${sel.shipping?.streetNumber ?? ''}${sel.shipping?.apartment ? `, Apt ${sel.shipping.apartment}` : ''}
+  ${sel.shipping?.postalCode ?? ''}, ${sel.shipping?.country ?? ''}
+  ${sel.shipping?.phone ? `Tel: ${sel.shipping.phone}` : ''}
+
+Note: stamp ships WITHOUT ink pad (postal regulations).
+Plain protective packaging only — no branded packaging required for this sample.
+
+────────────────────────────────────────
+QUOTE REQUEST
+────────────────────────────────────────
+Please provide:
+1. Unit price for 1 sample unit
+2. Unit price for volumes: 10 / 50 / 100 units
+3. Production lead time
+4. Shipping cost and options to destination country
+5. Confirmation you can receive SVG files for production
+6. Your recommended rubber type for fine geometric designs
+
+────────────────────────────────────────
+Sygneo | hello@sygneo.com | sygneo.com`;
+
+    navigator.clipboard.writeText(brief).then(() => {
+      setCopiedBrief(true);
+      setTimeout(() => setCopiedBrief(false), 3000);
     });
   }
 
@@ -231,8 +312,18 @@ export function ProductionCard({ sel: initial }: { sel: Selection }) {
                 background: openUpdate ? C.bg : 'transparent', color: C.sub,
                 fontSize: 15, letterSpacing: '0.2em', textTransform: 'uppercase',
                 cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif',
-                textAlign: 'left', marginTop: 8 }}>
+                textAlign: 'left', marginTop: 4 }}>
               ✎ Update Status
+            </button>
+
+            <button onClick={copyManufacturerBrief}
+              style={{ padding: '10px 16px', border: `1px solid ${copiedBrief ? '#1B6B4A' : C.gold}`,
+                background: copiedBrief ? 'rgba(27,107,74,0.08)' : 'rgba(139,115,85,0.06)',
+                color: copiedBrief ? '#1B6B4A' : C.gold,
+                fontSize: 15, letterSpacing: '0.15em', textTransform: 'uppercase',
+                cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif',
+                textAlign: 'left', marginTop: 4 }}>
+              {copiedBrief ? '✓ Brief Copied!' : '📋 Copy Manufacturer Brief'}
             </button>
           </div>
 
