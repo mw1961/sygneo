@@ -199,7 +199,7 @@ export function ProductionCard({ sel: initial }: { sel: Selection }) {
           </div>
           <div style={{ textAlign: 'center' }}>
             <div style={{ width: 140, height: 140, border: `1px solid ${C.gold}`, padding: 8 }}
-              dangerouslySetInnerHTML={{ __html: sel.productionSvg }} />
+              dangerouslySetInnerHTML={{ __html: sel.productionSvg ?? '' }} />
             <p style={{ fontSize: 9, color: C.gold, marginTop: 6, fontFamily: 'Helvetica, Arial, sans-serif',
               letterSpacing: '0.1em', textTransform: 'uppercase' }}>Production File</p>
           </div>
