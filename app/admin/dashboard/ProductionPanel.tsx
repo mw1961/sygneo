@@ -51,8 +51,32 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+const STAMP_SIZES = [
+  { label: '30mm', mm: 30 },
+  { label: '38mm', mm: 38 },
+  { label: '40mm', mm: 40 },
+  { label: '50mm', mm: 50 },
+];
+
+// Builds a production-ready SVG with physical dimensions and metadata comment
+function buildProductionSvg(rawSvg: string, mm: number, id: string): string {
+  // Strip outer <svg> tag and extract inner content
+  const inner = rawSvg.replace(/<svg[^>]*>/, '').replace(/<\/svg>/, '').trim();
+  return [
+    `<!-- Sygneo Production File | Order: ${id} | Size: ${mm}mm x ${mm}mm | Generated: ${new Date().toISOString().slice(0,10)} -->`,
+    `<svg xmlns="http://www.w3.org/2000/svg"`,
+    `     viewBox="0 0 300 300"`,
+    `     width="${mm}mm" height="${mm}mm"`,
+    `     shape-rendering="crispEdges"`,
+    `     xmlns:xlink="http://www.w3.org/1999/xlink">`,
+    `  <title>Sygneo Seal — Order ${id}</title>`,
+    inner,
+    `</svg>`,
+  ].join('\n');
+}
+
 function downloadSvg(svg: string, filename: string) {
-  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = filename; a.click();
@@ -68,6 +92,8 @@ export function ProductionCard({ sel: initial }: { sel: Selection }) {
   const [mfgRef, setMfgRef]         = useState(initial.manufacturerRef  ?? '');
   const [tracking, setTracking]     = useState(initial.trackingNumber   ?? '');
   const [showCompare, setShowCompare] = useState(false);
+  const [stampSize, setStampSize]     = useState(40);
+  const [showDownload, setShowDownload] = useState(false);
 
   async function save() {
     setSaving(true);
@@ -170,11 +196,11 @@ export function ProductionCard({ sel: initial }: { sel: Selection }) {
               cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
             {open ? 'Close' : 'Update'}
           </button>
-          <button onClick={() => downloadSvg(sel.productionSvg ?? sel.sealSvg, `sygneo-${sel.id}.svg`)}
-            style={{ padding: '7px 14px', border: `1px solid ${C.border}`, background: 'transparent',
-              color: C.sub, fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase',
+          <button onClick={() => setShowDownload(d => !d)}
+            style={{ padding: '7px 14px', border: `1px solid ${C.border}`, background: showDownload ? C.gold : 'transparent',
+              color: showDownload ? '#fff' : C.sub, fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase',
               cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
-            ↓ SVG
+            ↓ Export
           </button>
           {svgDiffers && (
             <button onClick={() => setShowCompare(c => !c)}
@@ -186,6 +212,79 @@ export function ProductionCard({ sel: initial }: { sel: Selection }) {
           )}
         </div>
       </div>
+
+      {/* Export / Download panel */}
+      {showDownload && (
+        <div style={{ borderTop: `1px solid ${C.border}`, padding: '20px 24px', background: '#FAFAFA' }}>
+          <p style={{ fontSize: 10, letterSpacing: '0.25em', color: C.gold, textTransform: 'uppercase',
+            fontFamily: 'Helvetica, Arial, sans-serif', marginBottom: 16 }}>Export Vector File</p>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
+
+            {/* Preview */}
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ width: 100, height: 100, border: `1px solid ${C.border}`, padding: 6, background: '#fff' }}
+                dangerouslySetInnerHTML={{ __html: sel.productionSvg ?? sel.sealSvg }} />
+              <p style={{ fontSize: 8, color: C.muted, marginTop: 4, fontFamily: 'Helvetica, Arial, sans-serif',
+                letterSpacing: '0.1em', textTransform: 'uppercase' }}>Preview</p>
+            </div>
+
+            <div>
+              {/* Size selector */}
+              <p style={{ fontSize: 9, color: C.muted, letterSpacing: '0.15em', textTransform: 'uppercase',
+                fontFamily: 'Helvetica, Arial, sans-serif', marginBottom: 10 }}>Stamp size</p>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+                {STAMP_SIZES.map(s => (
+                  <button key={s.mm} onClick={() => setStampSize(s.mm)}
+                    style={{ padding: '6px 14px', border: `1px solid ${stampSize === s.mm ? C.gold : C.border}`,
+                      background: stampSize === s.mm ? 'rgba(139,115,85,0.1)' : 'transparent',
+                      color: stampSize === s.mm ? C.gold : C.muted,
+                      fontSize: 12, cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif',
+                      letterSpacing: '0.1em' }}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* File info */}
+              <p style={{ fontSize: 11, color: C.sub, marginBottom: 16, lineHeight: 1.6 }}>
+                File: <code style={{ background: '#eee', padding: '2px 6px', fontSize: 11 }}>
+                  sygneo-{sel.id}-{stampSize}mm.svg
+                </code><br/>
+                Format: SVG · Size: {stampSize}mm × {stampSize}mm · viewBox: 300×300
+              </p>
+
+              {/* Download buttons */}
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => {
+                  const svg = buildProductionSvg(sel.productionSvg ?? sel.sealSvg, stampSize, sel.id);
+                  downloadSvg(svg, `sygneo-${sel.id}-${stampSize}mm.svg`);
+                }}
+                  style={{ padding: '9px 20px', border: 'none', background: C.gold, color: '#fff',
+                    fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase',
+                    cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif', fontWeight: 500 }}>
+                  ↓ Download {stampSize}mm SVG
+                </button>
+                <button onClick={() => {
+                  const svg = buildProductionSvg(sel.sealSvg, stampSize, sel.id);
+                  downloadSvg(svg, `sygneo-${sel.id}-${stampSize}mm-original.svg`);
+                }}
+                  style={{ padding: '9px 20px', border: `1px solid ${C.border}`, background: 'transparent',
+                    color: C.sub, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase',
+                    cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+                  ↓ Original SVG
+                </button>
+              </div>
+
+              <p style={{ fontSize: 10, color: C.muted, marginTop: 12, fontFamily: 'Helvetica, Arial, sans-serif',
+                lineHeight: 1.6 }}>
+                The production file includes physical dimensions, order metadata,<br/>
+                and is ready to send directly to a stamp manufacturer.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Compare panel */}
       {showCompare && svgDiffers && (
