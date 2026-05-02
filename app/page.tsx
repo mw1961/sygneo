@@ -52,10 +52,8 @@ export default function HomePage() {
   const [currentText, setCurrentText]         = useState('');
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [phase, setPhase]                     = useState<Phase>('questionnaire');
-  const [sealHistory, setSealHistory]         = useState<SealOption[][]>([]);
-  const [currentSet, setCurrentSet]           = useState(0);
-  const [chosenBySet, setChosenBySet]         = useState<Record<number, number | null>>({});
-  const [hash, setHash]                       = useState('');
+  const [allSeals, setAllSeals]               = useState<SealOption[]>([]);
+  const [chosen, setChosen]                   = useState<number | null>(null);
   const [notes, setNotes]                     = useState('');
   const [color, setColor]                     = useState('#000000');
   const [error, setError]                     = useState('');
@@ -64,11 +62,14 @@ export default function HomePage() {
   const [customInput, setCustomInput]         = useState('');
   const [customPending, setCustomPending]     = useState('');
   const [variant, setVariant]                 = useState(0);
+  const [generating, setGenerating]           = useState(false);
 
-  const seals  = sealHistory[currentSet] ?? [];
-  const chosen = chosenBySet[currentSet] ?? null;
-  const setChosen = (idx: number | null) =>
-    setChosenBySet(prev => ({ ...prev, [currentSet]: idx }));
+  // Apply ink color by replacing black in SVG strings
+  const seals = allSeals.map(s => ({
+    ...s,
+    svg: color === '#000000' ? s.svg
+      : s.svg.replace(/stroke="black"/g, `stroke="${color}"`).replace(/fill="black"/g, `fill="${color}"`),
+  }));
 
   const question: ProfilerQuestion | undefined = QUESTIONS[step];
   const isLastStep = step === QUESTIONS.length - 1;
@@ -93,13 +94,14 @@ export default function HomePage() {
     }
   }
 
-  const generateSeals = useCallback(async (
+  const fetchMoreSeals = useCallback(async (
     currentAnswers: Record<string, string | string[]>,
-    inkColor: string,
-    v = 0,
+    v: number,
+    isFirst: boolean,
   ) => {
     const profile = buildProfile({ ...currentAnswers, shape: 'circle' });
-    setPhase('generating');
+    if (isFirst) setPhase('generating');
+    else setGenerating(true);
     setError('');
     try {
       const res = await fetch('/api/generate-recraft', {
@@ -110,26 +112,21 @@ export default function HomePage() {
           occupation: Array.isArray(currentAnswers.occupation) ? currentAnswers.occupation : [profile.roots.historicOccupation],
           values:     profile.values,
           style:      currentAnswers.style ?? 'modern (clean, geometric)',
-          color:      inkColor,
+          variant:    v,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Generation failed');
-      // Recraft returns { seals: [{variant, imageUrl, error}] }
-      const sealOptions = (data.seals as {variant: number; svg?: string; imageUrl?: string | null; error: string | null}[])
+      const newSeals = (data.seals as {variant: number; svg?: string; imageUrl?: string | null; error: string | null}[])
         .filter(s => s.svg || s.imageUrl)
         .map(s => ({ pattern: `variant-${s.variant}`, shape: 'circle', svg: s.svg || '', imageUrl: s.imageUrl || undefined }));
-      setSealHistory(prev => {
-        const next = [...prev];
-        next[v] = sealOptions;
-        return next;
-      });
-      setCurrentSet(v);
-      setHash('');
+      setAllSeals(prev => isFirst ? newSeals : [...prev, ...newSeals]);
       setPhase('results');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Generation failed');
-      setPhase('questionnaire');
+      if (isFirst) setPhase('questionnaire');
+    } finally {
+      setGenerating(false);
     }
   }, []);
 
@@ -150,46 +147,22 @@ export default function HomePage() {
 
     if (isLastStep) {
       setVariant(0);
-      setSealHistory([]);
-      setChosenBySet({});
-      setCurrentSet(0);
-      await generateSeals(updated, color, 0);
+      setAllSeals([]);
+      setChosen(null);
+      await fetchMoreSeals(updated, 0, true);
     } else {
       setStep(s => s + 1);
     }
   }
 
-  async function handleColorChange(newColor: string) {
+  function handleColorChange(newColor: string) {
     setColor(newColor);
-    if (phase === 'results') {
-      // Regenerate all stored sets with new color
-      const newHistory: SealOption[][] = [];
-      for (let v = 0; v <= variant; v++) {
-        const profile = buildProfile({ ...answers, shape: 'circle' });
-        try {
-          const res = await fetch('/api/generate-nine', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              origin:     profile.roots.origin,
-              occupation: profile.roots.historicOccupation,
-              values:     profile.values,
-              color:      newColor,
-              variant:    v,
-            }),
-          });
-          const data = await res.json();
-          if (res.ok) newHistory[v] = data.seals;
-        } catch { /* keep old */ }
-      }
-      setSealHistory(newHistory);
-    }
   }
 
   async function handleGenerateMore() {
     const next = variant + 1;
     setVariant(next);
-    await generateSeals(answers, color, next);
+    await fetchMoreSeals(answers, next, false);
   }
 
   async function handleConfirm() {
@@ -214,7 +187,6 @@ export default function HomePage() {
           sealSvg,
           sealIndex:  chosen,
           notes,
-          hash,
         }),
       });
       const data = await res.json();
@@ -230,9 +202,9 @@ export default function HomePage() {
 
   function handleReset() {
     setStep(0); setAnswers({}); setCurrentText(''); setSelectedOptions([]);
-    setPhase('questionnaire'); setSealHistory([]); setChosenBySet({}); setNotes('');
+    setPhase('questionnaire'); setAllSeals([]); setChosen(null); setNotes('');
     setError(''); setSavedId(''); setColor('#000000');
-    setCustomInput(''); setCustomPending(''); setVariant(0); setCurrentSet(0);
+    setCustomInput(''); setCustomPending(''); setVariant(0);
   }
 
   // ── Generating ──────────────────────────────────────────────────────────────
@@ -296,7 +268,16 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* 2×2 grid — 4 Recraft variants */}
+          {/* Ink color picker */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+            <span style={{ fontSize: 10, letterSpacing: '0.25em', color: C.muted, textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>Ink Color</span>
+            {COLORS.map(c => (
+              <button key={c.value} onClick={() => handleColorChange(c.value)} title={c.label}
+                style={{ width: 28, height: 28, borderRadius: '50%', background: c.hex, border: color === c.value ? `3px solid ${C.gold}` : `2px solid ${C.border}`, cursor: 'pointer', outline: 'none', transition: 'border 0.2s' }} />
+            ))}
+          </div>
+
+          {/* Seal grid — accumulates all generated sets */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 8 }}>
             {seals.map((seal, idx) => {
               const isSelected = chosen === idx;
@@ -335,28 +316,9 @@ export default function HomePage() {
           {error && <p style={{ color: '#A0522D', fontSize: 13, marginTop: 16 }}>{error}</p>}
 
           <div style={{ display: 'flex', gap: 12, marginTop: 24, alignItems: 'center', flexWrap: 'wrap' }}>
-            {/* Back / Forward navigation */}
-            {sealHistory.length > 1 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: `1px solid ${C.border}`, padding: '4px 8px' }}>
-                <button onClick={() => { setCurrentSet(s => Math.max(0, s - 1)); }}
-                  disabled={currentSet === 0}
-                  style={{ background: 'none', border: 'none', color: currentSet === 0 ? C.muted : C.gold, fontSize: 16, cursor: currentSet === 0 ? 'default' : 'pointer', padding: '4px 8px', lineHeight: 1 }}>
-                  ←
-                </button>
-                <span style={{ fontSize: 10, color: C.muted, letterSpacing: '0.15em', fontFamily: 'Helvetica, Arial, sans-serif', minWidth: 48, textAlign: 'center' }}>
-                  {currentSet + 1} / {sealHistory.length}
-                </span>
-                <button onClick={() => { setCurrentSet(s => Math.min(sealHistory.length - 1, s + 1)); }}
-                  disabled={currentSet === sealHistory.length - 1}
-                  style={{ background: 'none', border: 'none', color: currentSet === sealHistory.length - 1 ? C.muted : C.gold, fontSize: 16, cursor: currentSet === sealHistory.length - 1 ? 'default' : 'pointer', padding: '4px 8px', lineHeight: 1 }}>
-                  →
-                </button>
-              </div>
-            )}
-
-            <button onClick={handleGenerateMore}
-              style={{ padding: '10px 24px', border: `1px solid ${C.gold}`, background: 'transparent', color: C.gold, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
-              ↻ Generate 9 More
+            <button onClick={handleGenerateMore} disabled={generating}
+              style={{ padding: '10px 24px', border: `1px solid ${C.gold}`, background: 'transparent', color: generating ? C.muted : C.gold, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: generating ? 'not-allowed' : 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+              {generating ? 'Generating...' : '↻ Generate 4 More'}
             </button>
             <button onClick={handleReset}
               style={{ padding: '10px 24px', border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
