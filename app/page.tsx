@@ -43,18 +43,10 @@ interface SealOption {
   imageUrl?: string;
 }
 
-const STYLES = [
-  { label: 'Japanese', full: 'Japanese (minimal, precise)' },
-  { label: 'Modern',   full: 'Modern (clean, geometric)' },
-  { label: 'Ancient',  full: 'Ancient (classical, ornate)' },
-  { label: 'Abstract', full: 'Abstract (symbolic, open)' },
-  { label: 'Maze',     full: 'Maze (angular fragments, bracket pattern)' },
-];
-
-// Exclude shape and style — style is now chosen in the results screen
+// Exclude shape and style (no longer collected)
 const QUESTIONS = PROFILER_QUESTIONS.filter(q => q.id !== 'shape' && q.id !== 'style');
 
-const MAX_GENERATIONS = 4; // total API calls per session (first + 3 more)
+const MAX_GENERATIONS = 2; // 2 batches × 6 seals = 12 total
 
 export default function HomePage() {
   const [step, setStep]                       = useState(0);
@@ -73,7 +65,6 @@ export default function HomePage() {
   const [customPending, setCustomPending]     = useState('');
   const [variant, setVariant]                 = useState(0);
   const [generating, setGenerating]           = useState(false);
-  const [activeStyle, setActiveStyle]         = useState(STYLES[1].full);
   const [elapsed, setElapsed]                 = useState(0);
   const [genCount, setGenCount]               = useState(0);
 
@@ -119,14 +110,12 @@ export default function HomePage() {
     currentAnswers: Record<string, string | string[]>,
     v: number,
     isFirst: boolean,
-    styleOverride?: string,
   ) => {
     const profile = buildProfile({ ...currentAnswers, shape: 'circle' });
     if (isFirst) setPhase('generating');
     else setGenerating(true);
     setError('');
     try {
-      const style = styleOverride ?? (currentAnswers.style as string) ?? 'Modern (clean, geometric)';
       const res = await fetch('/api/generate-recraft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -134,7 +123,6 @@ export default function HomePage() {
           origin:     Array.isArray(currentAnswers.origin) ? currentAnswers.origin : [profile.roots.origin],
           occupation: Array.isArray(currentAnswers.occupation) ? currentAnswers.occupation : [profile.roots.historicOccupation],
           values:     profile.values,
-          style,
           variant:    v,
         }),
       });
@@ -173,7 +161,6 @@ export default function HomePage() {
       setVariant(0);
       setAllSeals([]);
       setChosen(null);
-      setActiveStyle(updated.style as string ?? '');
       await fetchMoreSeals(updated, 0, true);
     } else {
       setStep(s => s + 1);
@@ -184,21 +171,10 @@ export default function HomePage() {
     setColor(newColor);
   }
 
-  // Switch style: replace all seals with new style
-  async function handleStyleChange(style: string) {
-    if (generating) return;
-    setActiveStyle(style);
-    setAllSeals([]);
-    setChosen(null);
-    setVariant(0);
-    await fetchMoreSeals(answers, 0, false, style);
-  }
-
-  // Append 4 more in current style
   async function handleGenerateMore() {
     const next = variant + 1;
     setVariant(next);
-    await fetchMoreSeals(answers, next, false, activeStyle);
+    await fetchMoreSeals(answers, next, false);
   }
 
   async function handleConfirm() {
@@ -240,7 +216,7 @@ export default function HomePage() {
     setStep(0); setAnswers({}); setCurrentText(''); setSelectedOptions([]);
     setPhase('questionnaire'); setAllSeals([]); setChosen(null); setNotes('');
     setError(''); setSavedId(''); setColor('#000000');
-    setCustomInput(''); setCustomPending(''); setVariant(0); setActiveStyle(STYLES[1].full); setGenCount(0);
+    setCustomInput(''); setCustomPending(''); setVariant(0); setGenCount(0);
   }
 
   // ── Generating ──────────────────────────────────────────────────────────────
@@ -304,26 +280,13 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Ink color + Style controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 10, letterSpacing: '0.25em', color: C.muted, textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>Ink</span>
-              {COLORS.map(c => (
-                <button key={c.value} onClick={() => handleColorChange(c.value)} title={c.label}
-                  style={{ width: 24, height: 24, borderRadius: '50%', background: c.hex, border: color === c.value ? `3px solid ${C.gold}` : `2px solid ${C.border}`, cursor: 'pointer', outline: 'none', transition: 'border 0.2s' }} />
-              ))}
-            </div>
-            <div style={{ width: 1, height: 20, background: C.border }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 10, letterSpacing: '0.25em', color: C.muted, textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>Style</span>
-              {STYLES.map(s => (
-                <button key={s.label} onClick={() => handleStyleChange(s.full)} disabled={generating || genLimitReached}
-                  title={`Switch to ${s.full}`}
-                  style={{ padding: '4px 10px', border: `1px solid ${activeStyle === s.full ? C.gold : C.border}`, background: activeStyle === s.full ? 'rgba(139,115,85,0.08)' : 'transparent', color: activeStyle === s.full ? C.gold : (generating || genLimitReached) ? C.muted : C.muted, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: (generating || genLimitReached) ? 'not-allowed' : 'pointer', fontFamily: 'Helvetica, Arial, sans-serif', transition: 'all 0.2s', opacity: genLimitReached ? 0.4 : 1 }}>
-                  {s.label}
-                </button>
-              ))}
-            </div>
+          {/* Ink color */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <span style={{ fontSize: 10, letterSpacing: '0.25em', color: C.muted, textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>Ink</span>
+            {COLORS.map(c => (
+              <button key={c.value} onClick={() => handleColorChange(c.value)} title={c.label}
+                style={{ width: 24, height: 24, borderRadius: '50%', background: c.hex, border: color === c.value ? `3px solid ${C.gold}` : `2px solid ${C.border}`, cursor: 'pointer', outline: 'none', transition: 'border 0.2s' }} />
+            ))}
           </div>
 
           {/* Loading indicator */}
@@ -338,16 +301,16 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Seal grid — accumulates all generated sets */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 8 }}>
+          {/* Seal grid — 3 columns: circles | squares | maze */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 8 }}>
             {seals.map((seal, idx) => {
               const isSelected = chosen === idx;
               return (
                 <button key={idx} onClick={() => setChosen(isSelected ? null : idx)}
-                  style={{ border: `2px solid ${isSelected ? C.gold : C.border}`, background: isSelected ? 'rgba(139,115,85,0.06)' : C.surface, padding: 16, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, transition: 'all 0.2s' }}>
+                  style={{ border: `2px solid ${isSelected ? C.gold : C.border}`, background: isSelected ? 'rgba(139,115,85,0.06)' : C.surface, padding: 10, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, transition: 'all 0.2s' }}>
                   {seal.imageUrl
-                    ? <img src={seal.imageUrl} alt={`Option ${idx + 1}`} style={{ width: 200, height: 200, objectFit: 'contain' }} />
-                    : <div style={{ width: 200, height: 200 }} dangerouslySetInnerHTML={{ __html: seal.svg }} />
+                    ? <img src={seal.imageUrl} alt={`Option ${idx + 1}`} style={{ width: 140, height: 140, objectFit: 'contain' }} />
+                    : <div style={{ width: 140, height: 140 }} dangerouslySetInnerHTML={{ __html: seal.svg }} />
                   }
                   <span style={{ fontSize: 9, color: isSelected ? C.gold : C.muted, letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>
                     {isSelected ? '✓ Selected' : `Option ${idx + 1}`}
@@ -389,7 +352,7 @@ export default function HomePage() {
             {!genLimitReached && (
               <button onClick={() => handleGenerateMore()} disabled={generating}
                 style={{ padding: '10px 24px', border: `1px solid ${C.gold}`, background: 'transparent', color: generating ? C.muted : C.gold, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: generating ? 'not-allowed' : 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
-                {generating ? 'Generating...' : `↻ Generate 4 More (${MAX_GENERATIONS - genCount} left)`}
+                {generating ? 'Generating...' : `↻ Generate 6 More (${MAX_GENERATIONS - genCount} left)`}
               </button>
             )}
             <button onClick={handleReset}

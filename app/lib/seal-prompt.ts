@@ -13,7 +13,7 @@
 const SECTION_A = `You are a heritage seal designer specializing in stamps for physical production — rubber and metal engraving.
 
 Output ONLY valid JSON — no markdown, no explanation:
-{"svgs":["<svg>...</svg>","<svg>...</svg>","<svg>...</svg>","<svg>...</svg>"]}`;
+{"svgs":["<svg>...</svg>","<svg>...</svg>","<svg>...</svg>","<svg>...</svg>","<svg>...</svg>","<svg>...</svg>"]}`;
 
 // ── Section B: Synthesis principle (FOUNDATIONAL — never weaken) ──────────────
 
@@ -26,11 +26,15 @@ The result must be UNIQUE to THIS specific family — not a generic geometric pa
 
 // ── Section C: Layout (FOUNDATIONAL — do not change order) ───────────────────
 
-const SECTION_C = `MANDATORY LAYOUT:
-- SVG 1: CIRCLE border — lead with ORIGIN geometry, accent with occupation or values
-- SVG 2: SQUARE border — lead with OCCUPATION geometry, accent with origin or values
-- SVG 3: CIRCLE border — lead with VALUES geometry, accent with origin or occupation
-- SVG 4: SQUARE border — full synthesis: all three parameters combined, filtered through the requested STYLE`;
+const SECTION_C = `MANDATORY LAYOUT — output exactly 6 SVGs:
+- SVG 1: CIRCLE border — lead with ORIGIN geometry, accent with occupation or values. Be creative — no style constraint.
+- SVG 2: SQUARE border — lead with OCCUPATION geometry, accent with origin or values. Be creative.
+- SVG 3: CIRCLE border — lead with VALUES geometry, accent with origin or occupation. Be creative.
+- SVG 4: SQUARE border — full synthesis of all three parameters. Be creative.
+- SVG 5: MAZE BRACKET — square border, 10-12 angular bracket fragments scattered across interior (see Maze rules below)
+- SVG 6: MAZE BRACKET — square border, different bracket density/rotation mix from SVG 5
+
+SVGs 1–4 have NO style restriction — use your full creative range. Each must feel different from the others.`;
 
 // ── Section D: Stamp production constraints (FOUNDATIONAL — never relax) ──────
 
@@ -41,7 +45,7 @@ const SECTION_D = `STAMP PRODUCTION CONSTRAINTS — every shape must survive phy
 - Minimum stroke-width="9" everywhere — thinner lines collapse in rubber/metal engraving
 - Only fill="black", fill="none", or fill="white" + stroke="black" — no grays, no gradients
   (fill="white" is allowed ONLY to create over/under weave illusions — a white-filled shape hides the "under" strand at a crossing point)
-- Max 5 shapes per SVG (including border) for Japanese/Modern/Abstract — Ancient style may use up to 6
+- Max 5 shapes per SVG (including border) — Maze SVGs use border + 1 path only (= 2 shapes)
 - Safe zone: stay within radius 108 for circle, 15px inset for square
 - All shapes must be CLOSED or clearly bounded — open paths that don't form a region will not engrave cleanly
 - Minimum gap between any two strokes: 6px — closer lines merge into a blob when pressed into rubber
@@ -94,41 +98,38 @@ VALUES metaphors:
   Truth → three concentric perfect circles (unwavering consistency)
   Default → spiral with clear bold strokes`;
 
-// ── Section F: Style language (extend freely) ────────────────────────────────
+// ── Section F: Maze rules + creativity directive ─────────────────────────────
+// NOTE: Named styles (Japanese/Modern/Ancient/Abstract/Maze) are preserved below
+// as comments — they may be re-enabled in future. Currently Claude is free.
 
-const SECTION_F = `STYLE LANGUAGE — apply based on the Style field in the request:
+/*  ARCHIVED STYLES — do not delete, may be re-enabled:
+    Japanese: max 3 shapes, large empty space, one dominant shape
+    Modern: 3-4 shapes, perfect symmetry, nested rings/rotated squares
+    Ancient: 4-5 shapes, layered dense rich ornament, concentric rings
+    Abstract: 3-4 shapes, asymmetric balanced, offset arcs/partial rings
+    Maze: square border + 1 multi-subpath bracket path (see active Maze rules below)
+*/
 
-Japanese (minimal, precise):
-  - Maximum 3 shapes total per SVG (including border)
-  - Large empty space — let the negative space carry meaning
-  - One dominant bold shape + at most one accent element
-  - Prefer single bold arc, single ring, or single rotated rect with nothing else
+const SECTION_F = `CREATIVITY DIRECTIVE (SVGs 1–4):
+You have full creative freedom. Do NOT default to concentric rings.
+For each SVG, choose a genuinely different primary composition — vary between:
+  arcs and open curves / rotated nested squares / radial tick marks / cultural craft patterns
+The family's profile (origin, occupation, values) must guide the specific geometry chosen.
 
-Modern (clean, geometric):
-  - 3–4 shapes per SVG
-  - Perfect symmetry, sharp angles, clean interlocking forms
-  - Prefer nested geometric rings, rotated squares, precise radial divisions
-
-Ancient (classical, ornate):
-  - 4–5 shapes per SVG (maximum allowed)
-  - Layered, dense, rich — every space filled with purposeful geometry
-  - Prefer concentric rings + inner ornamental pattern + accent marks
-  - More complex path curves and multi-step arc sequences
-
-Abstract (symbolic, open):
-  - 3–4 shapes per SVG
-  - Asymmetric but balanced — shapes offset from center are encouraged
-  - Prefer open arcs, partial rings, and non-centered compositions
-  - Intentionally ambiguous geometry that suggests rather than states
-
-Maze (angular fragments, bracket pattern):
-  - Square border only (no circles)
-  - ONE <path> element containing 10-12 disconnected subpaths (M...L...L M...L...L)
-  - Each subpath is an L-bracket, C-bracket, or short dash — all at strict 90° angles
-  - Distributed across the full interior (not centered) — loose 4×4 grid spacing
-  - No bracket touches or crosses another — minimum 14px gap everywhere
-  - stroke-width="11", fill="none" — bold and clear for engraving
-  - Total shapes: border rect + 1 path = 2 shapes only`;
+MAZE RULES (SVGs 5–6 only):
+- Square border: <rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>
+- ONE <path> element with 10-12 disconnected subpaths. Each subpath = one bracket. stroke-width="11" fill="none"
+- Bracket types (all 90° angles only):
+    L-open-right:  M x y  L x y+32  L x+32 y+32
+    L-open-left:   M x+32 y  L x+32 y+32  L x y+32
+    L-open-up:     M x y+32  L x y  L x+32 y
+    L-open-down:   M x y  L x+32 y  L x+32 y+32
+    C-bracket:     M x+32 y  L x y  L x y+32  L x+32 y+32
+    Short dash:    M x y  L x+28 y
+- Distribute across full interior x:38–255 y:38–255 in a loose 4×4 grid, shift each ±8px
+- Mix all 4 L-orientations + 2-3 C-brackets + 1-2 dashes
+- Minimum 14px gap between any two brackets — no touching, no crossing
+- SVG 6 must have a different density or rotation mix than SVG 5`;
 
 // ── Section G: Allowed elements (FOUNDATIONAL — never add polygon/ellipse) ────
 
@@ -185,7 +186,7 @@ export const SVG_SYSTEM = [
 // Each batch gives Claude specific, inspiring compositions to try — not just shape names.
 
 export const BATCH_VOCABULARY = [
-  // Batch 0 — Arc tension compositions
+  // Batch 0 — Emphasis on curves and organic movement
   `COMPOSITION DIRECTION THIS BATCH: Build designs with ARC TENSION — shapes that feel like they are pulling or wrapping around each other.
 Try compositions like:
   • A large bold ring with 3 short heavy arcs radiating inward at 120° intervals (not through center)

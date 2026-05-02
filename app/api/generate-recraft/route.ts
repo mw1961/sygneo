@@ -9,10 +9,11 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 // ── Fallback SVGs — clean geometric, no banned elements ──────────────────────
 
 function fallbackSvg(i: number): string {
+  const mazePath = `M 48 48 L 48 80 L 80 80  M 115 42 L 115 74 L 147 74  M 178 48 L 210 48 L 210 80  M 245 48 L 245 80 L 213 80  M 42 110 L 74 110 L 74 142  M 115 108 L 115 140  M 178 108 L 210 108 L 210 140 L 178 140  M 245 110 L 213 110  M 48 175 L 48 207 L 80 207  M 115 175 L 147 175 L 147 207  M 178 178 L 178 210  M 242 175 L 242 207 L 210 207  M 52 242 L 84 242  M 115 240 L 115 255 L 147 255 L 147 240  M 180 242 L 212 242 L 212 255  M 245 240 L 245 255`;
   const defs = [
     {
       border: `<circle cx="150" cy="150" r="132" fill="none" stroke="black" stroke-width="12"/>`,
-      inner:  `<circle cx="150" cy="150" r="80" fill="none" stroke="black" stroke-width="9"/><circle cx="150" cy="150" r="40" fill="none" stroke="black" stroke-width="9"/><circle cx="150" cy="150" r="12" fill="black"/>`,
+      inner:  `<circle cx="150" cy="150" r="80" fill="none" stroke="black" stroke-width="9"/><rect x="110" y="110" width="80" height="80" fill="none" stroke="black" stroke-width="9" transform="rotate(45 150 150)"/>`,
     },
     {
       border: `<rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>`,
@@ -24,7 +25,15 @@ function fallbackSvg(i: number): string {
     },
     {
       border: `<rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>`,
-      inner:  `<circle cx="150" cy="150" r="75" fill="none" stroke="black" stroke-width="9"/><circle cx="150" cy="150" r="40" fill="none" stroke="black" stroke-width="9"/><circle cx="150" cy="150" r="12" fill="black"/>`,
+      inner:  `<circle cx="150" cy="150" r="85" fill="none" stroke="black" stroke-width="9"/><rect x="115" y="115" width="70" height="70" fill="none" stroke="black" stroke-width="9"/>`,
+    },
+    {
+      border: `<rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>`,
+      inner:  `<path d="${mazePath}" fill="none" stroke="black" stroke-width="11"/>`,
+    },
+    {
+      border: `<rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>`,
+      inner:  `<path d="${mazePath}" fill="none" stroke="black" stroke-width="11"/>`,
     },
   ];
   const d = defs[i % defs.length];
@@ -46,17 +55,17 @@ function segmentPassesThroughCenter(x1: number, y1: number, x2: number, y2: numb
 
 export async function POST(request: NextRequest) {
   try {
-    const { origin, occupation, values, style, variant = 0 } = await request.json();
+    const { origin, occupation, values, variant = 0 } = await request.json();
 
     const batchInstruction = BATCH_VOCABULARY[variant % BATCH_VOCABULARY.length];
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
+      max_tokens: 6144,
       system: SVG_SYSTEM,
       messages: [{
         role: 'user',
-        content: `Origin: ${Array.isArray(origin) ? origin.join(', ') : origin}\nOccupation: ${Array.isArray(occupation) ? occupation.join(', ') : occupation}\nValues: ${Array.isArray(values) ? values.join(', ') : values}\nStyle: ${style}\n\n${batchInstruction}`,
+        content: `Origin: ${Array.isArray(origin) ? origin.join(', ') : origin}\nOccupation: ${Array.isArray(occupation) ? occupation.join(', ') : occupation}\nValues: ${Array.isArray(values) ? values.join(', ') : values}\n\n${batchInstruction}`,
       }],
     });
 
