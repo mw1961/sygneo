@@ -204,83 +204,52 @@ export const SVG_SYSTEM = [
   SECTION_H,
 ].join('\n\n');
 
-// ── Per-batch composition templates (rotates to force variety) ───────────────
-// Each batch gives Claude specific, inspiring compositions to try — not just shape names.
+// ── Per-batch composition assignments (each SVG gets a LOCKED vocabulary) ────
+// Rules: each SVG in a batch gets a different primary shape type, assigned explicitly.
+// Claude must follow the assignment — it is not a suggestion.
 
 export const BATCH_VOCABULARY = [
-  // Batch 0 — Emphasis on curves and organic movement
-  `COMPOSITION DIRECTION THIS BATCH: Build designs with ARC TENSION — shapes that feel like they are pulling or wrapping around each other.
-Try compositions like:
-  • A large bold ring with 3 short heavy arcs radiating inward at 120° intervals (not through center)
-  • Two large arcs facing each other across the center, like parentheses ( ) rotated — separated by empty space
-  • A bold outer ring with one thick crescent arc nested inside, rotated 30°
-  • An asymmetric arc composition where a heavy 270° arc wraps almost all the way around, with a small dot accent
-Avoid: concentric rings as the only element, centered filled dots.`,
+  // Batch 0
+  `MANDATORY COMPOSITION ASSIGNMENTS FOR THIS BATCH — follow exactly, do not substitute:
 
-  // Batch 1 — Layered square/diamond geometry
-  `COMPOSITION DIRECTION THIS BATCH: Build designs using LAYERED SQUARE AND DIAMOND GEOMETRY — precise, architectural, nested.
-Try compositions like:
-  • A square at 0° containing a smaller square at 45° (diamond) with visible space between them — clean nesting
-  • Two squares at 22° offset inside a ring, creating an octagonal rhythm without overlapping
-  • A bold diamond (rect rotated 45°) with two thin inner rings at different radii — no touching
-  • A large ring with a square inscribed inside it, touching the ring at 4 points (square corners touch ring)
-Avoid: more than 2 rotated rects, shapes that cross each other.`,
+SVG 1 (circle border): ARCS ONLY — draw 2–3 bold partial arcs (path A command) of different radii and sweep angles. No complete rings. No rotated rects. Example: one 200° arc at r=80, one 120° arc at r=50 offset 90°.
 
-  // Batch 2 — Radial and segmented compositions
-  `COMPOSITION DIRECTION THIS BATCH: Build designs using RADIAL RHYTHM — divisions of the circle that create visual rotation and energy.
-Try compositions like:
-  • 6 short bold lines arranged radially at 60° intervals, all starting at radius 55 and ending at radius 95 (none through center)
-  • A ring divided into 4 visible segments by 4 short arc paths, with a central accent shape
-  • 8 short tick marks arranged in a ring pattern (like clock marks), bold and evenly spaced
-  • An inner ring with 4 small square notches cut into it at cardinal points (use overlapping white rects)
-Avoid: concentric circles as main motif, centered dots.`,
+SVG 2 (square border): ROTATED RECTANGLES ONLY — draw 2 nested rects both using transform="rotate(N 150 150)", at different angles (e.g. 15° and 45°). No circles at all. No arcs.
 
-  // Batch 3 — Organic cultural geometry
-  `COMPOSITION DIRECTION THIS BATCH: Build designs inspired by CULTURAL CRAFT GEOMETRY — patterns drawn from weaving, tilework, and ancient ornament.
-Try compositions like:
-  • A Zellige-inspired ring: a bold outer ring with an inner octagon (8 sides, use path) — space between them
-  • Celtic-inspired triple arc: three equal arcs of 120° each, spaced evenly around center, each starting and ending at the same radius
-  • A meander-inspired composition: a square border with an inner square offset and one connecting L-shaped path
-  • A rosette: one bold ring with 6 small arcs arranged around it like petals, each arc curving outward
-Avoid: any shape that overlaps another, lines through center.`,
+SVG 3 (circle border): RADIAL TICK MARKS — draw 6 or 8 short bold <line> elements arranged in a ring at equal angles (like clock marks). Lines start at r=60 and end at r=95. None pass through center. Add one centered ring at r=108.
 
-  // Batch 5 — Maze bracket pattern
-  `COMPOSITION DIRECTION THIS BATCH: Build a MAZE BRACKET PATTERN — angular fragments scattered across the space like scattered puzzle pieces or ancient script fragments.
+SVG 4 (square border): SYNTHESIS — combine one element from each of the above: one arc + one rotated rect + one ring. These three shapes from different families, unified by the family profile.`,
 
-SVG TECHNIQUE: Use a SINGLE <path> element with 10-12 disconnected subpaths. Each subpath is one bracket. Multiple M commands in one path = still counts as 1 shape.
+  // Batch 1
+  `MANDATORY COMPOSITION ASSIGNMENTS FOR THIS BATCH — follow exactly, do not substitute:
 
-Bracket vocabulary (each spans 28-38px, all at 90° angles only):
-  L-bracket open right:  M x y  L x y+30  L x+30 y+30
-  L-bracket open left:   M x+30 y  L x+30 y+30  L x y+30
-  L-bracket open up:     M x y+30  L x y  L x+30 y
-  L-bracket open down:   M x y  L x+30 y  L x+30 y+30
-  C-bracket (3 lines):   M x+30 y  L x y  L x y+30  L x+30 y+30
-  Short dash:            M x y  L x+28 y
+SVG 1 (circle border): CONCENTRIC RINGS with varied spacing — 3 rings at very different radii (e.g. r=108, r=70, r=35). No diamond, no rotated rect. Spacing between rings must be unequal. Inner ring may be bold (stroke-width="14").
 
-Distribution rules:
-  - Place brackets in a loose 4×4 grid across x:40–255, y:40–255
-  - Shift each bracket randomly ±10px from its grid cell center
-  - Mix all 4 L-bracket orientations + some C-brackets + 1-2 dashes
-  - Minimum 14px gap between any two brackets
-  - NO bracket may touch or cross another
+SVG 2 (square border): CULTURAL OCTAGON — draw a bold 8-sided path (octagon) centered at (150,150), fitted within the square safe zone. Add one inner ring or one small rotated square as accent. No circles as main element.
 
-Full path structure example:
-  <path d="M 50 50 L 50 80 L 80 80  M 110 45 L 140 45 L 140 75  M 175 60 L 175 88  M 210 50 L 210 80 L 240 80  M 48 100 L 48 130 L 78 130  ..." fill="none" stroke="black" stroke-width="11"/>
+SVG 3 (circle border): RADIAL LINES — 8 bold <line> elements at 45° intervals, each starting at r=55 and ending at r=100, NO line passes through center. Add a bold ring at r=108 as frame. No rotated rects.
 
-Square border required. The bracket path is the only inner element (border + 1 path = 2 shapes total).
-The overall feel: maze fragments, ancient inscription, architectural notation — visual texture with rhythm.`,
+SVG 4 (square border): SYNTHESIS — one 270° open arc (path A) + one nested square at 45° offset + one ring. Three different shape families in one composition.`,
 
-  // Batch 4 — Celtic / interlocking weave (advanced)
-  `COMPOSITION DIRECTION THIS BATCH: Build a CELTIC INTERLOCKING WEAVE — strands that pass over and under each other, creating depth.
-The SVG over/under technique:
-  1. Draw all strands as bold <path> elements with stroke="black" fill="none" stroke-width="14"
-  2. At each CROSSING POINT, add a narrow <path> or <rect> with fill="white" stroke="none" to "cut" the under-strand
-  3. The white shape must be slightly wider than the stroke to cleanly hide it
-Try compositions like:
-  • A 4-fold interlocking knot: four C-curve strands (path C commands) that loop and cross, with 4-way rotational symmetry
-  • Two interlocking S-curves that form a continuous loop, with over/under at 2 crossing points
-  • A band knot: a thick ring with a single looping strand that crosses itself 4 times evenly around the circle
-Key: the composition must have rotational symmetry and feel balanced.
-All within safe zone, double outer ring (r=132 border + r=118 inner ring) frames the knot.
-Avoid: more than 8 crossing points (gets illegible), irregular/asymmetric compositions.`,
+  // Batch 2
+  `MANDATORY COMPOSITION ASSIGNMENTS FOR THIS BATCH — follow exactly, do not substitute:
+
+SVG 1 (circle border): BOLD CRESCENT — one large partial arc (path A, sweep 240°, r=85) + one smaller arc (sweep 120°, r=50, rotated 90°). Only arcs, no complete rings, no rects.
+
+SVG 2 (square border): DOUBLE ROTATED SQUARES — one rect rotated 22° and one rect rotated 67°, both centered at (150,150), different sizes (outer ~170×170, inner ~90×90). No circles at all.
+
+SVG 3 (circle border): CLOCK FACE — 12 short tick <line> elements at 30° intervals around r=90 (length 15px each, none through center) + one bold ring at r=108. Spacing feels like a clock or compass. No rects.
+
+SVG 4 (square border): SYNTHESIS — bold outer ring + 4 radial tick lines at cardinal points + one small rotated square centered. Three shape families unified.`,
+
+  // Batch 3
+  `MANDATORY COMPOSITION ASSIGNMENTS FOR THIS BATCH — follow exactly, do not substitute:
+
+SVG 1 (circle border): CELTIC TRIPLE ARC — three equal arcs (path A, 110° each) evenly spaced around the center at r=75, each arc starting and ending at the same radius. Bold outer ring. Arcs do not touch each other.
+
+SVG 2 (square border): MEANDER CORNER — a square border with one large inner square (straight, 0°) + a smaller inner square at 45° offset, both centered. Clean nested geometry. No circles.
+
+SVG 3 (circle border): ASYMMETRIC SPIRAL FEEL — one thick arc (270°, r=95) + one smaller arc (180°, r=55, rotated 135°) + one centered bold ring. Three arcs at different radii and rotations creating depth.
+
+SVG 4 (square border): SYNTHESIS — one bold ring + one rotated rect (45°) + 6 radial tick lines. Three shape families, driven by the family's origin metaphor.`,
 ];
