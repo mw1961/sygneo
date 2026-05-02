@@ -116,9 +116,9 @@ export default function HomePage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Generation failed');
       // Recraft returns { seals: [{variant, imageUrl, error}] }
-      const sealOptions = (data.seals as {variant: number; imageUrl: string | null; error: string | null}[])
-        .filter(s => s.imageUrl)
-        .map(s => ({ pattern: `variant-${s.variant}`, shape: 'circle', svg: '', imageUrl: s.imageUrl! }));
+      const sealOptions = (data.seals as {variant: number; svg?: string; imageUrl?: string | null; error: string | null}[])
+        .filter(s => s.svg || s.imageUrl)
+        .map(s => ({ pattern: `variant-${s.variant}`, shape: 'circle', svg: s.svg || '', imageUrl: s.imageUrl || undefined }));
       setSealHistory(prev => {
         const next = [...prev];
         next[v] = sealOptions;
@@ -198,8 +198,7 @@ export default function HomePage() {
     try {
       const profile = buildProfile({ ...answers, shape: seals[chosen].shape });
 
-      // Save imageUrl as the seal reference (vectorize manually for production)
-      const sealSvg = seals[chosen].imageUrl || seals[chosen].svg || '';
+      const sealSvg = seals[chosen].svg || seals[chosen].imageUrl || '';
       const res = await fetch('/api/save-selection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
