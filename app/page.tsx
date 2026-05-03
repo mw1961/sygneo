@@ -500,7 +500,7 @@ export default function HomePage() {
             {!genLimitReached && (
               <button onClick={() => handleGenerateMore()} disabled={generating}
                 style={{ padding: '10px 24px', border: `1px solid ${C.gold}`, background: 'transparent', color: generating ? C.muted : C.gold, fontSize: 13, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: generating ? 'not-allowed' : 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
-                {generating ? 'Generating...' : `↻ Generate 6 More (${MAX_GENERATIONS - genCount} left)`}
+                {generating ? 'Generating...' : `↻ Try Again — New Designs (${MAX_GENERATIONS - genCount} left)`}
               </button>
             )}
             <button onClick={handleReset}

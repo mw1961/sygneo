@@ -1,7 +1,7 @@
 /**
  * SYGNEO — Legacy Stamp Design Architect
- * Generates 12 circle OR 12 square SVGs per Claude call.
- * The initial letter is injected programmatically by route.ts (not relied on Claude).
+ * 6 circle + 6 square per Claude call (12 total per batch).
+ * Initial letter injected programmatically by route.ts.
  */
 
 export function fontSpec(language: string): string {
@@ -16,82 +16,111 @@ export function fontSpec(language: string): string {
   return "'Palatino Linotype', 'Palatino', 'Georgia', serif";
 }
 
+// ── Circle templates (6 visually distinct layouts) ────────────────────────────
 const CIRCLE_TEMPLATES = `
-NUMBERED DESIGN TEMPLATES — follow each layout EXACTLY, vary details based on family data:
-#1  border + 1 ring r=75 (leave center open for initial)
-#2  border + 1 rotated rect 70×70 at 45° (centered) — NO inner circles
-#3  border + 2 rings r=88 r=62 (spaced 26px apart)
-#4  border + 1 open arc path 270° sweep at r=75 — NO full circles inside
-#5  border + bold ring r=88 sw=11 + 4 short tick lines at N/S/E/W between r=100 and r=112
-#6  border + ring r=80 + rotated rect 90×90 at 45°
-#7  border + 8 radial <line> elements from r=52 to r=88 (evenly spaced at 45°)
-#8  border + 2 opposing arcs: one arc top 180° at r=72, one arc bottom 180° at r=72
-#9  border + 3 concentric rings r=100 r=76 r=52 (spaced 24px)
-#10 border + ring r=90 + ring r=55 + 8 short tick marks between them
-#11 border + ring r=85 + 6 arc segments forming a rosette (A path commands)
-#12 border + ring r=95 + ring r=52 + 12 short radial lines between them`;
+MANDATORY LAYOUT — each number is a DIFFERENT design. Follow exactly:
 
+#1 SINGLE RING
+  <circle cx="150" cy="150" r="78" fill="none" stroke="black" stroke-width="10"/>
+  (one ring only — clean and open)
+
+#2 DIAMOND FRAME
+  <rect x="110" y="110" width="80" height="80" fill="none" stroke="black" stroke-width="10" transform="rotate(45 150 150)"/>
+  (one rotated square only — NO circles inside)
+
+#3 DOUBLE RING
+  <circle cx="150" cy="150" r="90" fill="none" stroke="black" stroke-width="10"/>
+  <circle cx="150" cy="150" r="62" fill="none" stroke="black" stroke-width="10"/>
+  (two rings, 28px apart — nothing else)
+
+#4 RADIAL SPOKES
+  8 <line> elements: each from r=48 to r=90 at 0° 45° 90° 135° 180° 225° 270° 315°
+  Example: <line x1="150" y1="60" x2="150" y2="102" .../>  (north spoke)
+  (spokes only — no rings, no rects)
+
+#5 RING + CULTURAL PATH
+  <circle cx="150" cy="150" r="82" fill="none" stroke="black" stroke-width="10"/>
+  Plus ONE <path> of 5–6 arc segments forming an ornamental rosette inside r=82.
+  Use the family's origin culture as inspiration for the ornament shape.
+
+#6 TRIPLE BAND + TICKS
+  <circle cx="150" cy="150" r="94" fill="none" stroke="black" stroke-width="10"/>
+  <circle cx="150" cy="150" r="55" fill="none" stroke="black" stroke-width="10"/>
+  12 short <line> tick marks between r=60 and r=88, evenly spaced at 30° each.`;
+
+// ── Square templates (6 visually distinct layouts) ────────────────────────────
 const SQUARE_TEMPLATES = `
-NUMBERED DESIGN TEMPLATES — follow each layout EXACTLY, vary details based on family data:
-#1  border + inner square 230×230 centered (x=35 y=35) — leave center open
-#2  border + rotated rect 170×170 at 45° centered on 150,150 — NO inner squares
-#3  border + 2 nested squares: 240×240 (x=30) and 180×180 (x=60)
-#4  border + square 210×210 (x=45) + 4 corner L-shaped path marks
-#5  border + rotated rect 200×200 at 45° + ring r=62
-#6  border + square 220×220 (x=40) + 4 diagonal lines from corners inward (not through center)
-#7  border + 8 radial <line> elements from r=52 to r=90 (evenly spaced)
-#8  border + 3 nested squares at 0° 15° 30° (260×260, 200×200, 150×150)
-#9  border + square 240×240 (x=30) + ring r=88 + inner square 140×140 (x=80)
-#10 border + triple nested squares (260×260, 200×200, 150×150) + 8 tick marks
-#11 border + 4 quadrant small squares (each 80×80, at corners) + ring r=52
-#12 border + square 220×220 + ring r=85 + rotated rect 120×120 at 45°`;
+MANDATORY LAYOUT — each number is a DIFFERENT design. Follow exactly:
 
-export function buildSystemPrompt(
-  shape: 'circle' | 'square',
-): string {
+#1 INNER SQUARE
+  <rect x="36" y="36" width="228" height="228" fill="none" stroke="black" stroke-width="10"/>
+  (one inner square only — clean and open)
+
+#2 DIAMOND FRAME
+  <rect x="95" y="95" width="110" height="110" fill="none" stroke="black" stroke-width="10" transform="rotate(45 150 150)"/>
+  (one rotated rect only — NO other shapes)
+
+#3 DOUBLE SQUARE
+  <rect x="36" y="36" width="228" height="228" fill="none" stroke="black" stroke-width="10"/>
+  <rect x="68" y="68" width="164" height="164" fill="none" stroke="black" stroke-width="10"/>
+  (two nested squares, 32px apart — nothing else)
+
+#4 RADIAL SPOKES
+  8 <line> elements: each from r=48 to r=90 at 0° 45° 90° 135° 180° 225° 270° 315°
+  (same spoke pattern as circle #4 — works for square too)
+
+#5 TRIPLE SQUARE
+  <rect x="36" y="36" width="228" height="228" fill="none" stroke="black" stroke-width="10"/>
+  <rect x="66" y="66" width="168" height="168" fill="none" stroke="black" stroke-width="10"/>
+  <rect x="96" y="96" width="108" height="108" fill="none" stroke="black" stroke-width="10"/>
+  (three nested squares, each 30px inside the previous)
+
+#6 SQUARE + RING + DIAMOND
+  <rect x="40" y="40" width="220" height="220" fill="none" stroke="black" stroke-width="10"/>
+  <circle cx="150" cy="150" r="78" fill="none" stroke="black" stroke-width="10"/>
+  <rect x="115" y="115" width="70" height="70" fill="none" stroke="black" stroke-width="10" transform="rotate(45 150 150)"/>
+  (three-layer composition — all fit within safe zone)`;
+
+export function buildSystemPrompt(shape: 'circle' | 'square'): string {
   const border    = shape === 'circle'
     ? `<circle cx="150" cy="150" r="132" fill="none" stroke="black" stroke-width="12"/>`
     : `<rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>`;
-  const safeZone  = shape === 'circle'
-    ? 'All inner shapes within radius 108. No element center more than 108px from (150,150).'
-    : 'All inner shapes within x:33–267, y:33–267.';
+  const safeNote  = shape === 'circle'
+    ? 'SAFE ZONE: all inner shapes must fit within radius 105 from center (150,150). No element may cross or touch the border ring.'
+    : 'SAFE ZONE: all inner shapes within x:33–267, y:33–267. No element may touch or cross the border rect.';
   const shapeRule = shape === 'circle'
-    ? 'ALL 12 SVGs MUST have circle border r=132. NO square borders anywhere.'
-    : 'ALL 12 SVGs MUST have square border 264×264. NO circle borders for the outer frame.';
+    ? 'ALL 6 SVGs MUST use circle border r=132. No square borders.'
+    : 'ALL 6 SVGs MUST use square border 264×264 at x=18 y=18. No circle borders for the outer frame.';
   const templates = shape === 'circle' ? CIRCLE_TEMPLATES : SQUARE_TEMPLATES;
 
-  return `You are a master heritage stamp designer. Generate exactly 12 unique SVG stamp designs.
-Output ONLY valid JSON — no markdown, no explanation:
-{"svgs":["<svg>...</svg>","<svg>...</svg>",...(12 items)]}
+  return `You are a master heritage stamp designer for rubber stamp production.
+Output ONLY valid JSON — no markdown:
+{"svgs":["<svg>...</svg>","<svg>...</svg>","<svg>...</svg>","<svg>...</svg>","<svg>...</svg>","<svg>...</svg>"]}
 
 ${shapeRule}
 
-MANDATORY for EVERY SVG:
-1. viewBox="0 0 300 300"
-2. First: <rect width="300" height="300" fill="white"/>
-3. Second: ${border}
-4. Minimum stroke-width="9" for all shapes
-5. Only fill="black" fill="none" fill="white" — NO grays NO gradients
-6. ${safeZone}
-7. Minimum 8px gap between any two strokes
+EVERY SVG must contain exactly these elements in order:
+1. <rect width="300" height="300" fill="white"/>
+2. The border (as above)
+3. The inner design shapes (from the template)
+DO NOT add text, labels, or any other elements.
+
+STAMP PRODUCTION RULES:
+- viewBox="0 0 300 300"
+- Minimum stroke-width="9" — thinner lines collapse in rubber engraving
+- Only fill="none", fill="white", fill="black" — no grays, no gradients
+- ${safeNote}
+- Minimum 10px gap between any two parallel strokes
+- The center area (approximately 100×100px around point 150,150) must stay OPEN for the initial letter
 
 ${templates}
 
-Note: A family initial letter will be centered over each design. Leave the visual center OPEN — do not fill x:110–190 y:110–190 with black shapes.
-
-BANNED ELEMENTS: <polygon> <polyline> <ellipse> <text> <tspan> — do NOT output any text elements.
-
-STRICTLY FORBIDDEN CONTENT — never generate any of the following:
-- Religious symbols: cross, crescent, Star of David, OM, menorah, ankh, or any faith symbol
-- Military / weapon symbols: crosshair, gun sight, bullet, sword, shield-with-weapon, grenade, target
-- Nationalist / political symbols: flags, state emblems, party logos, national seals
-- Racist or hate symbols of any kind
-- Gender-specific symbols
-- Animals, faces, human figures, hands
-- Stars (pointy alternating shapes)
-- The Eye of Providence or any "all-seeing eye" shape
-
-CRITICAL: Each of the 12 designs must match its numbered template. Do NOT generate the same layout for two different numbers.`;
+STRICTLY FORBIDDEN:
+- Religious, military, nationalist, racist, gender or hate symbols
+- Crosshair, gun sight, stars, crosses, crescents, triangles, eyes
+- <polygon> <polyline> <ellipse> <text> <tspan>
+- Any element outside the safe zone
+- Repeating the same template for two different numbers`;
 }
 
 export function buildUserMessage(params: {
@@ -99,16 +128,13 @@ export function buildUserMessage(params: {
   occupation: string;
   values:     string;
   lineage:    string;
-  language:   string;
-  initial:    string;
 }): string {
-  return `Family Profile:
+  return `Family profile:
 Origins: ${params.origin || 'Universal'}
 Occupation: ${params.occupation || 'Artisan'}
 Values: ${params.values || 'Wisdom, Resilience'}
 Lineage: ${params.lineage || 'From the past'}
 
-Apply cultural geometry from "${params.origin}" as ornamental motifs within each template's structure.
-Let "${params.values}" influence the symbolic weight of each design.
-Generate all 12 numbered designs now.`;
+Use the geometric heritage of "${params.origin}" as inspiration for ornamental motifs in templates #5 and #6.
+Generate all 6 designs now, following each numbered template.`;
 }

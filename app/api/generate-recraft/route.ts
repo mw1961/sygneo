@@ -7,51 +7,96 @@ export const maxDuration = 60;
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 function fallbackSvg(shape: 'circle' | 'square', i: number): string {
-  const defs = [
-    `<circle cx="150" cy="150" r="80" fill="none" stroke="black" stroke-width="9"/>`,
-    `<rect x="90" y="90" width="120" height="120" fill="none" stroke="black" stroke-width="9" transform="rotate(45 150 150)"/>`,
-    `<circle cx="150" cy="150" r="88" fill="none" stroke="black" stroke-width="9"/><circle cx="150" cy="150" r="60" fill="none" stroke="black" stroke-width="9"/>`,
-    `<rect x="55" y="55" width="190" height="190" fill="none" stroke="black" stroke-width="9"/>`,
-  ];
-  const inner  = defs[i % defs.length];
   const border = shape === 'circle'
     ? `<circle cx="150" cy="150" r="132" fill="none" stroke="black" stroke-width="12"/>`
     : `<rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="white"/>${border}${inner}</svg>`;
+  const inners = [
+    `<circle cx="150" cy="150" r="78" fill="none" stroke="black" stroke-width="10"/>`,
+    `<rect x="110" y="110" width="80" height="80" fill="none" stroke="black" stroke-width="10" transform="rotate(45 150 150)"/>`,
+    `<circle cx="150" cy="150" r="90" fill="none" stroke="black" stroke-width="10"/><circle cx="150" cy="150" r="62" fill="none" stroke="black" stroke-width="10"/>`,
+    `<rect x="36" y="36" width="228" height="228" fill="none" stroke="black" stroke-width="10"/>`,
+    `<rect x="36" y="36" width="228" height="228" fill="none" stroke="black" stroke-width="10"/><rect x="68" y="68" width="164" height="164" fill="none" stroke="black" stroke-width="10"/>`,
+    `<rect x="40" y="40" width="220" height="220" fill="none" stroke="black" stroke-width="10"/><circle cx="150" cy="150" r="78" fill="none" stroke="black" stroke-width="10"/>`,
+  ];
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="white"/>${border}${inners[i % inners.length]}</svg>`;
 }
 
 function escapeXml(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-// Always inject the initial programmatically — never rely on Claude for this
 function injectInitial(svg: string, initial: string, language: string): string {
   if (!initial.trim()) return svg;
-  const font = fontSpec(language);
-  const char = initial.trim();
-  // Remove any text elements Claude may have generated
+  const font   = fontSpec(language);
+  const char   = initial.trim();
   const cleaned = svg.replace(/<text[\s\S]*?<\/text>/gi, '');
   const textEl  = `<text x="150" y="150" dy=".35em" font-family="${font}" font-size="68" text-anchor="middle" fill="black">${escapeXml(char)}</text>`;
   return cleaned.replace('</svg>', `${textEl}</svg>`);
 }
 
+// Returns true if all inner shapes are within the safe zone
+function checkBounds(svg: string, shape: 'circle' | 'square'): boolean {
+  // Check circle elements
+  for (const [tag] of svg.matchAll(/<circle[^>]+>/gi)) {
+    const cx = parseFloat(tag.match(/cx="([\d.]+)"/)?.[1] ?? '150');
+    const cy = parseFloat(tag.match(/cy="([\d.]+)"/)?.[1] ?? '150');
+    const r  = parseFloat(tag.match(/\br="([\d.]+)"/)?.[1] ?? '0');
+    if (r >= 125) continue; // skip the border
+    if (shape === 'circle') {
+      if (Math.hypot(cx - 150, cy - 150) + r > 108) return false;
+    } else {
+      if (cx - r < 30 || cx + r > 270 || cy - r < 30 || cy + r > 270) return false;
+    }
+  }
+  // Check rect elements (non-rotated — rotated rects are harder to validate exactly)
+  for (const [tag] of svg.matchAll(/<rect[^>]+>/gi)) {
+    const x = parseFloat(tag.match(/\bx="([\d.]+)"/)?.[1] ?? '0');
+    const y = parseFloat(tag.match(/\by="([\d.]+)"/)?.[1] ?? '0');
+    const w = parseFloat(tag.match(/width="([\d.]+)"/)?.[1] ?? '0');
+    const h = parseFloat(tag.match(/height="([\d.]+)"/)?.[1] ?? '0');
+    if (w >= 260) continue; // skip the border and background
+    if (/transform="rotate/.test(tag)) {
+      // For rotated rects: check corner distance from center
+      const halfDiag = Math.hypot(w / 2, h / 2);
+      const cx = x + w / 2, cy = y + h / 2;
+      if (shape === 'circle' && Math.hypot(cx - 150, cy - 150) + halfDiag > 112) return false;
+    } else {
+      if (shape === 'square' && (x < 28 || y < 28 || x + w > 272 || y + h > 272)) return false;
+      if (shape === 'circle') {
+        // Approximate: check all four corners
+        for (const [px, py] of [[x,y],[x+w,y],[x,y+h],[x+w,y+h]] as [number,number][]) {
+          if (Math.hypot(px - 150, py - 150) > 112) return false;
+        }
+      }
+    }
+  }
+  // Check line endpoints
+  for (const [tag] of svg.matchAll(/<line[^>]+>/gi)) {
+    const x1 = parseFloat(tag.match(/x1="([\d.]+)"/)?.[1] ?? '150');
+    const y1 = parseFloat(tag.match(/y1="([\d.]+)"/)?.[1] ?? '150');
+    const x2 = parseFloat(tag.match(/x2="([\d.]+)"/)?.[1] ?? '150');
+    const y2 = parseFloat(tag.match(/y2="([\d.]+)"/)?.[1] ?? '150');
+    if (shape === 'circle') {
+      if (Math.hypot(x1 - 150, y1 - 150) > 112 || Math.hypot(x2 - 150, y2 - 150) > 112) return false;
+    } else {
+      if (x1 < 28 || x1 > 272 || y1 < 28 || y1 > 272) return false;
+      if (x2 < 28 || x2 > 272 || y2 < 28 || y2 > 272) return false;
+    }
+  }
+  return true;
+}
+
 function validateSvg(svg: string, shape: 'circle' | 'square', i: number): string {
-  if (/<tspan/i.test(svg))                     { console.warn(`SVG ${shape}${i} tspan`);        return fallbackSvg(shape, i); }
-  if (/<polygon/i.test(svg) || /<polyline/i.test(svg)) { console.warn(`SVG ${shape}${i} poly`); return fallbackSvg(shape, i); }
+  if (/<tspan/i.test(svg))                               { console.warn(`${shape}${i} tspan`);        return fallbackSvg(shape, i); }
+  if (/<polygon/i.test(svg) || /<polyline/i.test(svg))   { console.warn(`${shape}${i} poly`);         return fallbackSvg(shape, i); }
 
-  // Wrong border type
-  if (shape === 'circle' && !/<circle cx="150" cy="150" r="132"/.test(svg)) {
-    console.warn(`SVG ${shape}${i} wrong border`);
-    return fallbackSvg(shape, i);
-  }
-  if (shape === 'square' && !/<rect x="18" y="18" width="264" height="264"/.test(svg)) {
-    console.warn(`SVG ${shape}${i} wrong border`);
-    return fallbackSvg(shape, i);
-  }
+  if (shape === 'circle' && !/<circle cx="150" cy="150" r="132"/.test(svg))      { console.warn(`${shape}${i} no circle border`); return fallbackSvg(shape, i); }
+  if (shape === 'square' && !/<rect x="18" y="18" width="264" height="264"/.test(svg)) { console.warn(`${shape}${i} no square border`); return fallbackSvg(shape, i); }
 
-  // Thin strokes (allow 6+ to give Claude some flexibility)
   const swVals = [...svg.matchAll(/stroke-width="([\d.]+)"/g)].map(m => parseFloat(m[1]));
-  if (swVals.some(sw => sw < 6)) { console.warn(`SVG ${shape}${i} thin stroke`); return fallbackSvg(shape, i); }
+  if (swVals.some(sw => sw < 6)) { console.warn(`${shape}${i} thin stroke`); return fallbackSvg(shape, i); }
+
+  if (!checkBounds(svg, shape)) { console.warn(`${shape}${i} out of bounds`); return fallbackSvg(shape, i); }
 
   return svg;
 }
@@ -65,7 +110,7 @@ async function generateBatch(shape: 'circle' | 'square', params: Params): Promis
   try {
     const response = await anthropic.messages.create({
       model:      'claude-sonnet-4-6',
-      max_tokens: 8000,
+      max_tokens: 5000,
       system:     buildSystemPrompt(shape),
       messages:   [{ role: 'user', content: buildUserMessage(params) }],
     });
@@ -78,17 +123,13 @@ async function generateBatch(shape: 'circle' | 'square', params: Params): Promis
     if (!parsed.svgs?.length) throw new Error(`Empty SVGs from ${shape} batch`);
 
     return parsed.svgs
-      .slice(0, 12)
-      .map((svg, i) => {
-        const validated = validateSvg(svg, shape, i);
-        return injectInitial(validated, params.initial, params.language);
-      });
+      .slice(0, 6)
+      .map((svg, i) => injectInitial(validateSvg(svg, shape, i), params.initial, params.language));
   } catch (err) {
     console.error(`generate-batch ${shape}:`, err);
-    return Array.from({ length: 12 }, (_, i) => {
-      const fb = fallbackSvg(shape, i);
-      return injectInitial(fb, params.initial, params.language);
-    });
+    return Array.from({ length: 6 }, (_, i) =>
+      injectInitial(fallbackSvg(shape, i), params.initial, params.language)
+    );
   }
 }
 
@@ -106,31 +147,30 @@ export async function POST(request: NextRequest) {
     const originStr     = Array.isArray(origin)     ? (origin as string[]).join(', ')     : origin;
     const occupationStr = Array.isArray(occupation) ? (occupation as string[]).join(', ') : occupation;
     const valuesArr     = Array.isArray(values)     ? values as string[] : [values as string];
-    const valuesStr     = valuesArr.join(', ');
 
     const params: Params = {
-      origin: originStr, occupation: occupationStr, values: valuesStr,
-      lineage, language, initial,
+      origin: originStr, occupation: occupationStr,
+      values: valuesArr.join(', '), lineage, language, initial,
     };
 
-    // Two parallel calls: 12 circle + 12 square
     const [circleSvgs, squareSvgs] = await Promise.all([
       generateBatch('circle', params),
       generateBatch('square', params),
     ]);
 
     const seals = [
-      ...circleSvgs.map((svg, i) => ({ variant: i,      shape: 'circle', svg, imageUrl: null, error: null })),
-      ...squareSvgs.map((svg, i) => ({ variant: 12 + i, shape: 'square', svg, imageUrl: null, error: null })),
+      ...circleSvgs.map((svg, i) => ({ variant: i,     shape: 'circle', svg, imageUrl: null, error: null })),
+      ...squareSvgs.map((svg, i) => ({ variant: 6 + i, shape: 'square', svg, imageUrl: null, error: null })),
     ];
 
     return NextResponse.json({ seals });
 
   } catch (err) {
     console.error('generate-seal:', err);
+    const params = { initial: '', language: '' } as Params;
     const seals = [
-      ...Array.from({ length: 12 }, (_, i) => ({ variant: i,      shape: 'circle', svg: fallbackSvg('circle', i), imageUrl: null, error: null })),
-      ...Array.from({ length: 12 }, (_, i) => ({ variant: 12 + i, shape: 'square', svg: fallbackSvg('square', i), imageUrl: null, error: null })),
+      ...Array.from({ length: 6 }, (_, i) => ({ variant: i,     shape: 'circle', svg: injectInitial(fallbackSvg('circle', i), params.initial, params.language), imageUrl: null, error: null })),
+      ...Array.from({ length: 6 }, (_, i) => ({ variant: 6 + i, shape: 'square', svg: injectInitial(fallbackSvg('square', i), params.initial, params.language), imageUrl: null, error: null })),
     ];
     return NextResponse.json({ seals });
   }
