@@ -30,10 +30,12 @@ function injectInitial(svg: string, initial: string, language: string): string {
   const font    = fontSpec(language);
   const char    = initial.trim();
   const cleaned = svg.replace(/<text[\s\S]*?<\/text>/gi, '');
-  // paint-order="stroke" paints stroke underneath fill → white halo "knocks out"
-  // background geometry without covering the letter itself
-  const textEl  = `<text x="150" y="150" dy=".35em" font-family="${font}" font-size="68" text-anchor="middle" fill="black" stroke="white" stroke-width="6" paint-order="stroke">${escapeXml(char)}</text>`;
-  return cleaned.replace('</svg>', `${textEl}</svg>`);
+  // Layer 1 — white knockout halo: thick white stroke over the letter shape
+  // masks any background geometry that overlaps with the letter area
+  const haloEl = `<text x="150" y="150" dy=".35em" font-family="${font}" font-size="68" text-anchor="middle" fill="white" stroke="white" stroke-width="18" stroke-linejoin="round">${escapeXml(char)}</text>`;
+  // Layer 2 — black letter on top, clean and sharp
+  const textEl = `<text x="150" y="150" dy=".35em" font-family="${font}" font-size="68" text-anchor="middle" fill="black">${escapeXml(char)}</text>`;
+  return cleaned.replace('</svg>', `${haloEl}${textEl}</svg>`);
 }
 
 // Returns true if all inner shapes are within the safe zone

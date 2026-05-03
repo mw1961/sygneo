@@ -43,10 +43,11 @@ MANDATORY LAYOUT — each number is a DIFFERENT design. Follow exactly:
   Plus ONE <path> of 5–6 arc segments forming an ornamental rosette inside r=82.
   Use the family's origin culture as inspiration for the ornament shape.
 
-#6 TRIPLE BAND + TICKS
-  <circle cx="150" cy="150" r="94" fill="none" stroke="black" stroke-width="10"/>
-  <circle cx="150" cy="150" r="55" fill="none" stroke="black" stroke-width="10"/>
-  12 short <line> tick marks between r=60 and r=88, evenly spaced at 30° each.`;
+#6 RING + TICKS
+  <circle cx="150" cy="150" r="88" fill="none" stroke="black" stroke-width="10"/>
+  8 short <line> tick marks: each from r=50 to r=72, evenly spaced at 45° (N/NE/E/SE/S/SW/W/NW).
+  Example north tick: <line x1="150" y1="78" x2="150" y2="100" stroke="black" stroke-width="9"/>
+  (2 elements only — ring + 8 ticks. No additional rings.)`;
 
 // ── Square templates (6 visually distinct layouts) ────────────────────────────
 const SQUARE_TEMPLATES = `
@@ -75,11 +76,10 @@ MANDATORY LAYOUT — each number is a DIFFERENT design. Follow exactly:
   <rect x="96" y="96" width="108" height="108" fill="none" stroke="black" stroke-width="10"/>
   (three nested squares, each 30px inside the previous)
 
-#6 SQUARE + RING + DIAMOND
+#6 SQUARE + RING
   <rect x="40" y="40" width="220" height="220" fill="none" stroke="black" stroke-width="10"/>
-  <circle cx="150" cy="150" r="78" fill="none" stroke="black" stroke-width="10"/>
-  <rect x="115" y="115" width="70" height="70" fill="none" stroke="black" stroke-width="10" transform="rotate(45 150 150)"/>
-  (three-layer composition — all fit within safe zone)`;
+  <circle cx="150" cy="150" r="80" fill="none" stroke="black" stroke-width="10"/>
+  (two elements only — clean and bold, no third shape)`;
 
 export function buildSystemPrompt(shape: 'circle' | 'square'): string {
   const border    = shape === 'circle'
