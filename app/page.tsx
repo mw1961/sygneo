@@ -914,6 +914,12 @@ export default function HomePage() {
           onMouseLeave={e => { if (canProceed) { (e.target as HTMLButtonElement).style.background = 'transparent'; (e.target as HTMLButtonElement).style.color = C.gold; } }}>
           {isLastStep ? 'Generate My Seal →' : 'Continue →'}
         </button>
+
+        {step === 0 && (
+          <p style={{ marginTop: 32, fontSize: 13, color: C.muted, fontFamily: 'Georgia, serif', fontStyle: 'italic', textAlign: 'center' }}>
+            Because memories fade, but a seal lasts forever.
+          </p>
+        )}
       </div>
     </main>
   );

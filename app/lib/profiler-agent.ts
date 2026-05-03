@@ -48,12 +48,12 @@ export const PROFILER_QUESTIONS: ProfilerQuestion[] = [
   {
     id: 'lineageStart',
     step: 1,
-    question: 'Where does your lineage begin?',
-    hint: 'Choose how you want to root your seal — in history, or from this moment forward.',
+    question: 'Your family story deserves a tangible symbol.',
+    hint: 'Behind every family name lie generations of values, moments, and identity. This is your moment to transform your heritage into something physical and timeless — a centerpiece of pride to be passed down through generations. Create a lasting mark that bridges your roots with the future of your children, representing who you are, today and forever.',
     type: 'select',
     options: [
-      'From the past — my family has roots I want to honour',
-      'From now — I am starting a new lineage today',
+      'Honor the Past — Giving tangible form to our family\'s deep roots and traditions.',
+      'Forge the Future — Starting a new lineage of pride and laying the foundation today.',
     ],
   },
   {
