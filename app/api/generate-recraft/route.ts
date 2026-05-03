@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import { buildSystemPrompt, buildUserMessage, fontSpec } from '@/app/lib/seal-prompt';
+import { buildSystemPrompt, buildUserMessage, fontSpec, dyOffset } from '@/app/lib/seal-prompt';
 
 export const maxDuration = 60;
 
@@ -39,18 +39,20 @@ function injectInitial(svg: string, initial: string, language: string): string {
   const svgTag = svgTagMatch[1];
   const bgRect = '<rect width="300" height="300" fill="white"/>';
 
-  // SVG mask: white = show background, black letterform = cut background out
-  // stroke-width="14" gives a 7px safety buffer around every pixel of the letter
+  const dy   = dyOffset(language);
+  const size = 70; // 25% larger than the previous 56 — letter is the hero
+
+  // SVG mask: white = show background, black letterform (+halo) = cut background out
   const defs =
     `<defs><mask id="lm">` +
     `<rect width="300" height="300" fill="white"/>` +
-    `<text x="150" y="150" dy=".35em" font-family="${font}" font-size="56" text-anchor="middle"` +
-    ` fill="black" stroke="black" stroke-width="14" stroke-linejoin="round">${escaped}</text>` +
+    `<text x="150" y="150" dy="${dy}" font-family="${font}" font-size="${size}" text-anchor="middle"` +
+    ` fill="black" stroke="black" stroke-width="16" stroke-linejoin="round">${escaped}</text>` +
     `</mask></defs>`;
 
-  // Visible letter drawn on top of the masked group — clean, unobstructed
+  // Visible letter drawn on top of the masked group — clean and dominant
   const letter =
-    `<text x="150" y="150" dy=".35em" font-family="${font}" font-size="56"` +
+    `<text x="150" y="150" dy="${dy}" font-family="${font}" font-size="${size}"` +
     ` text-anchor="middle" fill="black">${escaped}</text>`;
 
   // Extract inner content (strip svg tag, bg rect, closing tag)

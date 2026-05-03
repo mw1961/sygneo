@@ -1,7 +1,7 @@
 /**
- * SYGNEO — Legacy Stamp Design Architect
+ * SYGNEO — Legacy Stamp Design Architect · Final Production Version
  * 6 circle + 6 square per Claude call (12 total per batch).
- * Initial letter injected programmatically by route.ts.
+ * Initial letter injected programmatically with SVG mask knockout.
  */
 
 export function fontSpec(language: string): string {
@@ -16,110 +16,135 @@ export function fontSpec(language: string): string {
   return "'Palatino Linotype', 'Palatino', 'Georgia', serif";
 }
 
-// ── Circle templates (6 visually distinct layouts) ────────────────────────────
+// dy offset for optical vertical centering per script family
+export function dyOffset(language: string): string {
+  if (language.includes('Hebrew') || language.includes('Arabic')) return '.28em';
+  if (language.includes('Japanese') || language.includes('Chinese') || language.includes('Korean')) return '.25em';
+  return '.35em';
+}
+
+// ── Circle templates — 4 named themes, 6 distinct layouts ─────────────────────
 const CIRCLE_TEMPLATES = `
-MANDATORY LAYOUT — each number is a DIFFERENT design. Follow exactly:
+Each design uses ONE of four approved production themes. Follow each template EXACTLY.
 
-#1 SINGLE RING
-  <circle cx="150" cy="150" r="78" fill="none" stroke="black" stroke-width="10"/>
-  (one ring only — clean and open)
+#1 — THE MINIMALIST RING
+A single bold ring. The letter IS the design.
+<circle cx="150" cy="150" r="80" fill="none" stroke="black" stroke-width="11"/>
+(one ring, nothing else — maximum openness)
 
-#2 DIAMOND FRAME
-  <rect x="110" y="110" width="80" height="80" fill="none" stroke="black" stroke-width="10" transform="rotate(45 150 150)"/>
-  (one rotated square only — NO circles inside)
+#2 — THE DOUBLE HERITAGE RING
+Two concentric rings with a generous breathing gap.
+<circle cx="150" cy="150" r="92" fill="none" stroke="black" stroke-width="11"/>
+<circle cx="150" cy="150" r="66" fill="none" stroke="black" stroke-width="11"/>
+(gap between rings = 26px minimum — do not reduce)
 
-#3 DOUBLE RING
-  <circle cx="150" cy="150" r="90" fill="none" stroke="black" stroke-width="10"/>
-  <circle cx="150" cy="150" r="62" fill="none" stroke="black" stroke-width="10"/>
-  (two rings, 28px apart — nothing else)
+#3 — THE SUNBURST
+Eight bold radial spokes. No rings. No rects.
+<line x1="150" y1="62" x2="150" y2="96" stroke="black" stroke-width="10"/>   (N)
+<line x1="214" y1="86" x2="193" y2="107" stroke="black" stroke-width="10"/>  (NE)
+<line x1="238" y1="150" x2="204" y2="150" stroke="black" stroke-width="10"/> (E)
+<line x1="214" y1="214" x2="193" y2="193" stroke="black" stroke-width="10"/> (SE)
+<line x1="150" y1="238" x2="150" y2="204" stroke="black" stroke-width="10"/> (S)
+<line x1="86" y1="214" x2="107" y2="193" stroke="black" stroke-width="10"/>  (SW)
+<line x1="62" y1="150" x2="96" y2="150" stroke="black" stroke-width="10"/>   (W)
+<line x1="86" y1="86" x2="107" y2="107" stroke="black" stroke-width="10"/>   (NW)
 
-#4 RADIAL SPOKES
-  8 <line> elements: each from r=48 to r=90 at 0° 45° 90° 135° 180° 225° 270° 315°
-  Example: <line x1="150" y1="60" x2="150" y2="102" .../>  (north spoke)
-  (spokes only — no rings, no rects)
+#4 — THE MODERN SHIELD
+A bold ring combined with a rotated square frame inside.
+<circle cx="150" cy="150" r="84" fill="none" stroke="black" stroke-width="11"/>
+<rect x="112" y="112" width="76" height="76" fill="none" stroke="black" stroke-width="10" transform="rotate(45 150 150)"/>
+(rotated rect corners must stay inside r=84)
 
-#5 RING + CULTURAL PATH
-  <circle cx="150" cy="150" r="82" fill="none" stroke="black" stroke-width="10"/>
-  Plus ONE <path> of 4–5 arc segments inside r=82. ALL path points MUST be outside r=60 from center (150,150).
-  Use the family's origin culture as inspiration for the ornament shape.
+#5 — THE HERITAGE BAND
+A ring with 8 bold, evenly-spaced arc segments as a decorative band. NO petals, NO floral shapes, NO sharp angles.
+<circle cx="150" cy="150" r="84" fill="none" stroke="black" stroke-width="11"/>
+The 8 arc segments are short convex arcs (A command, radius 18, sweep 1) placed around the ring at 45° intervals. Each arc starts and ends outside r=65.
 
-#6 RING + TICKS
-  <circle cx="150" cy="150" r="88" fill="none" stroke="black" stroke-width="10"/>
-  8 short <line> tick marks: each from r=50 to r=72, evenly spaced at 45° (N/NE/E/SE/S/SW/W/NW).
-  Example north tick: <line x1="150" y1="78" x2="150" y2="100" stroke="black" stroke-width="9"/>
-  (2 elements only — ring + 8 ticks. No additional rings.)`;
+#6 — THE WEIGHTED FRAME
+A very thick outer ring paired with a small inner ring — bold and dramatic.
+<circle cx="150" cy="150" r="96" fill="none" stroke="black" stroke-width="13"/>
+<circle cx="150" cy="150" r="64" fill="none" stroke="black" stroke-width="11"/>
+(gap between rings = 32px)`;
 
-// ── Square templates (6 visually distinct layouts) ────────────────────────────
+// ── Square templates — 4 named themes, 6 distinct layouts ─────────────────────
 const SQUARE_TEMPLATES = `
-MANDATORY LAYOUT — each number is a DIFFERENT design. Follow exactly:
+Each design uses ONE of four approved production themes. Follow each template EXACTLY.
 
-#1 INNER SQUARE
-  <rect x="36" y="36" width="228" height="228" fill="none" stroke="black" stroke-width="10"/>
-  (one inner square only — clean and open)
+#1 — THE WEIGHTED SQUARE
+A single bold inner square. The letter IS the hero.
+<rect x="40" y="40" width="220" height="220" fill="none" stroke="black" stroke-width="11"/>
+(one square, nothing else — maximum openness)
 
-#2 DIAMOND FRAME
-  <rect x="95" y="95" width="110" height="110" fill="none" stroke="black" stroke-width="10" transform="rotate(45 150 150)"/>
-  (one rotated rect only — NO other shapes)
+#2 — THE MODERN DIAMOND
+A bold rotated square (diamond orientation). No other shapes.
+<rect x="100" y="100" width="100" height="100" fill="none" stroke="black" stroke-width="11" transform="rotate(45 150 150)"/>
+(rotated square only — check that all corners are inside the safe zone)
 
-#3 DOUBLE SQUARE
-  <rect x="36" y="36" width="228" height="228" fill="none" stroke="black" stroke-width="10"/>
-  <rect x="68" y="68" width="164" height="164" fill="none" stroke="black" stroke-width="10"/>
-  (two nested squares, 32px apart — nothing else)
+#3 — THE DOUBLE HERITAGE SQUARE
+Two nested squares with a bold generous gap.
+<rect x="40" y="40" width="220" height="220" fill="none" stroke="black" stroke-width="11"/>
+<rect x="92" y="92" width="116" height="116" fill="none" stroke="black" stroke-width="11"/>
+(42px gap between the squares — do NOT add a third square)
 
-#4 RADIAL SPOKES
-  8 <line> elements: each from r=48 to r=90 at 0° 45° 90° 135° 180° 225° 270° 315°
-  (same spoke pattern as circle #4 — works for square too)
+#4 — THE SUNBURST
+Eight bold radial spokes. No squares. No rings.
+(use the exact same 8 lines as circle #3 above)
 
-#5 DOUBLE SQUARE BOLD
-  <rect x="40" y="40" width="220" height="220" fill="none" stroke="black" stroke-width="10"/>
-  <rect x="92" y="92" width="116" height="116" fill="none" stroke="black" stroke-width="10"/>
-  (TWO nested squares only — 42px gap between them. Do NOT add a third square.)
+#5 — THE MODERN SHIELD
+A square combined with a bold inner ring.
+<rect x="40" y="40" width="220" height="220" fill="none" stroke="black" stroke-width="11"/>
+<circle cx="150" cy="150" r="76" fill="none" stroke="black" stroke-width="11"/>
 
-#6 SQUARE + RING
-  <rect x="40" y="40" width="220" height="220" fill="none" stroke="black" stroke-width="10"/>
-  <circle cx="150" cy="150" r="80" fill="none" stroke="black" stroke-width="10"/>
-  (two elements only — clean and bold, no third shape)`;
+#6 — THE HERITAGE FRAME
+A square with bold L-bracket ornaments at all four corners. No additional rings or rects.
+<rect x="40" y="40" width="220" height="220" fill="none" stroke="black" stroke-width="11"/>
+Corner L-brackets: 4 paths, each 28px long on each arm, placed at the inner corners (approx 52px from center on each axis).
+Example top-left bracket: <path d="M 80 108 L 80 80 L 108 80" fill="none" stroke="black" stroke-width="10" stroke-linecap="round"/>`;
 
 export function buildSystemPrompt(shape: 'circle' | 'square'): string {
   const border    = shape === 'circle'
     ? `<circle cx="150" cy="150" r="132" fill="none" stroke="black" stroke-width="12"/>`
     : `<rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>`;
-  const safeNote  = shape === 'circle'
-    ? 'SAFE ZONE: all inner shapes must fit within radius 105 from center (150,150). No element may cross or touch the border ring.'
-    : 'SAFE ZONE: all inner shapes within x:33–267, y:33–267. No element may touch or cross the border rect.';
+  const safeZone  = shape === 'circle'
+    ? 'All inner shapes within radius 105 from center (150,150). No element touches the outer border ring.'
+    : 'All inner shapes within x:33–267, y:33–267. No element touches the outer border rect.';
   const shapeRule = shape === 'circle'
-    ? 'ALL 6 SVGs MUST use circle border r=132. No square borders.'
-    : 'ALL 6 SVGs MUST use square border 264×264 at x=18 y=18. No circle borders for the outer frame.';
+    ? 'ALL 6 SVGs MUST use the circle border (r=132). No square borders.'
+    : 'ALL 6 SVGs MUST use the square border (264×264 at x=18 y=18). No circle borders for the outer frame.';
   const templates = shape === 'circle' ? CIRCLE_TEMPLATES : SQUARE_TEMPLATES;
 
-  return `You are a master heritage stamp designer for rubber stamp production.
+  return `You are a master heritage stamp engineer specializing in premium rubber stamp production.
 Output ONLY valid JSON — no markdown:
 {"svgs":["<svg>...</svg>","<svg>...</svg>","<svg>...</svg>","<svg>...</svg>","<svg>...</svg>","<svg>...</svg>"]}
 
 ${shapeRule}
 
-EVERY SVG must contain exactly these elements in order:
+EVERY SVG must contain elements in this order:
 1. <rect width="300" height="300" fill="white"/>
-2. The border (as above)
-3. The inner design shapes (from the template)
-DO NOT add text, labels, or any other elements.
+2. The outer border
+3. The inner design (from the numbered template)
+DO NOT add text or any unlisted elements.
 
-STAMP PRODUCTION RULES:
+RUBBER STAMP PRODUCTION RULES — non-negotiable:
 - viewBox="0 0 300 300"
-- Minimum stroke-width="9" — thinner lines collapse in rubber engraving
+- Minimum stroke-width="10" for all decorative elements (thinner lines collapse in engraving)
 - Only fill="none", fill="white", fill="black" — no grays, no gradients
-- ${safeNote}
-- Minimum 10px gap between any two parallel strokes
-- CLEAR ZONE: no decorative element may have any point closer than r=58 from center (150,150). The letter sits in this zone.
+- ${safeZone}
+- CLEAR ZONE: no decorative element may have any point closer than r=62 from center (150,150) — the initial letter occupies this zone
+- Minimum 20px gap between any two parallel decorative strokes (breathing room for ink)
+
+ABSOLUTELY BANNED — these cause ink traps or fail in production:
+- Scalloped borders, petal shapes, floral patterns, sharp inner angles (ink traps)
+- Three or more concentric frames of the same type
+- Dense lattices, cross-hatching, or complex internal grids
+- <polygon> <polyline> <ellipse> <text> <tspan>
+- Any element violating the safe zone or clear zone rules
+- Religious, military, nationalist, racist, gender or hate symbols
+- Stars, crosses, crescents, eyes, triangles, flags, animals, faces
 
 ${templates}
 
-STRICTLY FORBIDDEN:
-- Religious, military, nationalist, racist, gender or hate symbols
-- Crosshair, gun sight, stars, crosses, crescents, triangles, eyes
-- <polygon> <polyline> <ellipse> <text> <tspan>
-- Any element outside the safe zone
-- Repeating the same template for two different numbers`;
+CRITICAL: Match each numbered template exactly. Do NOT substitute or combine templates. Do NOT generate the same layout for two different numbers.`;
 }
 
 export function buildUserMessage(params: {
@@ -128,12 +153,12 @@ export function buildUserMessage(params: {
   values:     string;
   lineage:    string;
 }): string {
-  return `Family profile:
+  return `Family heritage profile:
 Origins: ${params.origin || 'Universal'}
 Occupation: ${params.occupation || 'Artisan'}
 Values: ${params.values || 'Wisdom, Resilience'}
 Lineage: ${params.lineage || 'From the past'}
 
-Use the geometric heritage of "${params.origin}" as inspiration for ornamental motifs in templates #5 and #6.
-Generate all 6 designs now, following each numbered template.`;
+For templates #5 and #6: draw subtle geometric inspiration from the visual heritage of "${params.origin}" (abstract patterns only — no symbols).
+Generate all 6 numbered designs now.`;
 }
