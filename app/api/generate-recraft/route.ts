@@ -29,13 +29,35 @@ function injectInitial(svg: string, initial: string, language: string): string {
   if (!initial.trim()) return svg;
   const font    = fontSpec(language);
   const char    = initial.trim();
-  const cleaned = svg.replace(/<text[\s\S]*?<\/text>/gi, '');
-  // Layer 1 — white knockout halo: thick white stroke over the letter shape
-  // masks any background geometry that overlaps with the letter area
-  const haloEl = `<text x="150" y="150" dy=".35em" font-family="${font}" font-size="68" text-anchor="middle" fill="white" stroke="white" stroke-width="18" stroke-linejoin="round">${escapeXml(char)}</text>`;
-  // Layer 2 — black letter on top, clean and sharp
-  const textEl = `<text x="150" y="150" dy=".35em" font-family="${font}" font-size="68" text-anchor="middle" fill="black">${escapeXml(char)}</text>`;
-  return cleaned.replace('</svg>', `${haloEl}${textEl}</svg>`);
+  const escaped = escapeXml(char);
+
+  // Remove any prior text elements
+  let s = svg.replace(/<text[\s\S]*?<\/text>/gi, '');
+
+  const svgTagMatch = s.match(/^(<svg[^>]*>)/);
+  if (!svgTagMatch) return svg;
+  const svgTag = svgTagMatch[1];
+  const bgRect = '<rect width="300" height="300" fill="white"/>';
+
+  // SVG mask: white = show background, black letterform = cut background out
+  // stroke-width="14" gives a 7px safety buffer around every pixel of the letter
+  const defs =
+    `<defs><mask id="lm">` +
+    `<rect width="300" height="300" fill="white"/>` +
+    `<text x="150" y="150" dy=".35em" font-family="${font}" font-size="56" text-anchor="middle"` +
+    ` fill="black" stroke="black" stroke-width="14" stroke-linejoin="round">${escaped}</text>` +
+    `</mask></defs>`;
+
+  // Visible letter drawn on top of the masked group — clean, unobstructed
+  const letter =
+    `<text x="150" y="150" dy=".35em" font-family="${font}" font-size="56"` +
+    ` text-anchor="middle" fill="black">${escaped}</text>`;
+
+  // Extract inner content (strip svg tag, bg rect, closing tag)
+  const inner = s.replace(svgTag, '').replace(bgRect, '').replace('</svg>', '').trim();
+
+  // Reconstruct: svgTag + defs + bgRect + masked-group + letter + /svg
+  return `${svgTag}${defs}${bgRect}<g mask="url(#lm)">${inner}</g>${letter}</svg>`;
 }
 
 // Returns true if all inner shapes are within the safe zone

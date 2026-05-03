@@ -40,7 +40,7 @@ MANDATORY LAYOUT — each number is a DIFFERENT design. Follow exactly:
 
 #5 RING + CULTURAL PATH
   <circle cx="150" cy="150" r="82" fill="none" stroke="black" stroke-width="10"/>
-  Plus ONE <path> of 5–6 arc segments forming an ornamental rosette inside r=82.
+  Plus ONE <path> of 4–5 arc segments inside r=82. ALL path points MUST be outside r=60 from center (150,150).
   Use the family's origin culture as inspiration for the ornament shape.
 
 #6 RING + TICKS
@@ -70,11 +70,10 @@ MANDATORY LAYOUT — each number is a DIFFERENT design. Follow exactly:
   8 <line> elements: each from r=48 to r=90 at 0° 45° 90° 135° 180° 225° 270° 315°
   (same spoke pattern as circle #4 — works for square too)
 
-#5 TRIPLE SQUARE
-  <rect x="36" y="36" width="228" height="228" fill="none" stroke="black" stroke-width="10"/>
-  <rect x="66" y="66" width="168" height="168" fill="none" stroke="black" stroke-width="10"/>
-  <rect x="96" y="96" width="108" height="108" fill="none" stroke="black" stroke-width="10"/>
-  (three nested squares, each 30px inside the previous)
+#5 DOUBLE SQUARE BOLD
+  <rect x="40" y="40" width="220" height="220" fill="none" stroke="black" stroke-width="10"/>
+  <rect x="92" y="92" width="116" height="116" fill="none" stroke="black" stroke-width="10"/>
+  (TWO nested squares only — 42px gap between them. Do NOT add a third square.)
 
 #6 SQUARE + RING
   <rect x="40" y="40" width="220" height="220" fill="none" stroke="black" stroke-width="10"/>
@@ -111,7 +110,7 @@ STAMP PRODUCTION RULES:
 - Only fill="none", fill="white", fill="black" — no grays, no gradients
 - ${safeNote}
 - Minimum 10px gap between any two parallel strokes
-- The center area (approximately 100×100px around point 150,150) must stay OPEN for the initial letter
+- CLEAR ZONE: no decorative element may have any point closer than r=58 from center (150,150). The letter sits in this zone.
 
 ${templates}
 
