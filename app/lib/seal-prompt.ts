@@ -16,10 +16,12 @@ export function fontSpec(language: string): string {
   return "'Palatino Linotype', 'Palatino', 'Georgia', serif";
 }
 
-// dy offset for optical vertical centering per script family
+// dy offset for optical vertical centering per script family.
+// Formula: dy = cap_height/2 relative to em, so letter visual center sits at y=150.
+// Latin/Hebrew/Cyrillic/Greek cap-height ≈ 0.70em → dy = 0.35em
+// CJK characters fill the full em square and extend below baseline → dy = 0.38em
 export function dyOffset(language: string): string {
-  if (language.includes('Hebrew') || language.includes('Arabic')) return '.28em';
-  if (language.includes('Japanese') || language.includes('Chinese') || language.includes('Korean')) return '.25em';
+  if (language.includes('Japanese') || language.includes('Chinese') || language.includes('Korean')) return '.38em';
   return '.35em';
 }
 

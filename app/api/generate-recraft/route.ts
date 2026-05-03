@@ -40,17 +40,18 @@ function injectInitial(svg: string, initial: string, language: string): string {
   const bgRect = '<rect width="300" height="300" fill="white"/>';
 
   const dy   = dyOffset(language);
-  const size = 70; // 25% larger than the previous 56 — letter is the hero
+  const size = 90; // Hero scale: fills the central void of the stamp
 
-  // SVG mask: white = show background, black letterform (+halo) = cut background out
+  // SVG mask: white = show background, black letterform (+halo) = cut background out.
+  // stroke-width="18" = 9px safety buffer on every side of the letter outline.
   const defs =
     `<defs><mask id="lm">` +
     `<rect width="300" height="300" fill="white"/>` +
     `<text x="150" y="150" dy="${dy}" font-family="${font}" font-size="${size}" text-anchor="middle"` +
-    ` fill="black" stroke="black" stroke-width="16" stroke-linejoin="round">${escaped}</text>` +
+    ` fill="black" stroke="black" stroke-width="18" stroke-linejoin="round">${escaped}</text>` +
     `</mask></defs>`;
 
-  // Visible letter drawn on top of the masked group — clean and dominant
+  // Visible letter on top — unmasked, dominant
   const letter =
     `<text x="150" y="150" dy="${dy}" font-family="${font}" font-size="${size}"` +
     ` text-anchor="middle" fill="black">${escaped}</text>`;
