@@ -30,9 +30,9 @@ const SHAPE_LABELS: Record<string, string> = {
 
 const COLORS = [
   { label: 'Black',        value: '#000000', hex: '#000000' },
-  { label: 'Deep Navy',    value: '#191970', hex: '#191970' },
-  { label: 'Crimson',      value: '#8B0000', hex: '#8B0000' },
-  { label: 'Forest Green', value: '#1B4332', hex: '#1B4332' },
+  { label: 'Royal Blue',   value: '#002366', hex: '#002366' },
+  { label: 'Deep Red',     value: '#8B0000', hex: '#8B0000' },
+  { label: 'Forest Green', value: '#013220', hex: '#013220' },
 ];
 
 type Phase = 'questionnaire' | 'confirming' | 'generating' | 'results' | 'confirmed';
@@ -456,7 +456,10 @@ export default function HomePage() {
                       )}
                       {seal.imageUrl
                         ? <img src={seal.imageUrl} alt={`Option ${seal.origIdx + 1}`} style={{ width: 130, height: 130, objectFit: 'contain' }} />
-                        : <div style={{ width: 130, height: 130 }} dangerouslySetInnerHTML={{ __html: seal.svg }} />
+                        : <div style={{ width: 130, height: 130, background: '#F5F0E8', position: 'relative' }}>
+                            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 60%, rgba(160,145,120,0.15) 100%)', zIndex: 1 }} />
+                            <div style={{ position: 'relative', zIndex: 2, width: '100%', height: '100%' }} dangerouslySetInnerHTML={{ __html: seal.svg }} />
+                          </div>
                       }
                       <span style={{ fontSize: 11, color: isSelected ? C.gold : C.muted, letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>
                         {isSelected ? 'Selected' : `No. ${seal.origIdx + 1}`}
@@ -642,8 +645,21 @@ export default function HomePage() {
                 Design Preview · No. {previewIdx + 1}
               </p>
 
-              <div style={{ width: 240, height: 240, margin: '0 auto 28px', border: `1px solid ${C.border}`, padding: 8, background: C.bg }}
-                dangerouslySetInnerHTML={{ __html: previewSeal.svg }} />
+              {/* Stamp impression simulation — paper texture + vignette */}
+              <div style={{ width: 240, height: 240, margin: '0 auto 28px', position: 'relative' }}>
+                <div style={{ width: '100%', height: '100%', background: '#F5F0E8', position: 'relative', overflow: 'hidden' }}>
+                  {/* Paper grain */}
+                  <div style={{ position: 'absolute', inset: 0, backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'200\' height=\'200\' filter=\'url(%23n)\' opacity=\'0.04\'/%3E%3C/svg%3E")', opacity: 0.6 }} />
+                  {/* Vignette */}
+                  <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 55%, rgba(180,165,140,0.25) 100%)' }} />
+                  {/* SVG */}
+                  <div style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', padding: 8, boxSizing: 'border-box' }}
+                    dangerouslySetInnerHTML={{ __html: previewSeal.svg }} />
+                </div>
+                <p style={{ textAlign: 'center', fontSize: 11, color: C.muted, marginTop: 6, letterSpacing: '0.2em', textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+                  Stamp impression preview · 50mm scale
+                </p>
+              </div>
 
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={() => setPreviewIdx(null)}

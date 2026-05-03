@@ -27,10 +27,12 @@ function escapeXml(s: string): string {
 
 function injectInitial(svg: string, initial: string, language: string): string {
   if (!initial.trim()) return svg;
-  const font   = fontSpec(language);
-  const char   = initial.trim();
+  const font    = fontSpec(language);
+  const char    = initial.trim();
   const cleaned = svg.replace(/<text[\s\S]*?<\/text>/gi, '');
-  const textEl  = `<text x="150" y="150" dy=".35em" font-family="${font}" font-size="68" text-anchor="middle" fill="black">${escapeXml(char)}</text>`;
+  // paint-order="stroke" paints stroke underneath fill → white halo "knocks out"
+  // background geometry without covering the letter itself
+  const textEl  = `<text x="150" y="150" dy=".35em" font-family="${font}" font-size="68" text-anchor="middle" fill="black" stroke="white" stroke-width="6" paint-order="stroke">${escapeXml(char)}</text>`;
   return cleaned.replace('</svg>', `${textEl}</svg>`);
 }
 
