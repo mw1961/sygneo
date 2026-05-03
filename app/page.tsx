@@ -103,6 +103,7 @@ export default function HomePage() {
   const [elapsed, setElapsed]                 = useState(0);
   const [genCount, setGenCount]               = useState(0);
   const [shapeFilter, setShapeFilter]         = useState<ShapeFilter>('all');
+  const [previewIdx, setPreviewIdx]           = useState<number | null>(null);
   const [showModal, setShowModal]             = useState(false);
   const [shipping, setShipping]               = useState<Record<string, string>>({
     recipientName: '', country: '', street: '', streetNumber: '',
@@ -158,20 +159,7 @@ export default function HomePage() {
     else setGenerating(true);
     setError('');
     try {
-      // Summarise shapes already shown so Claude avoids them
-      const usedShapes = allSeals.slice(0, 4).map((s, i) => {
-        const svg = s.svg;
-        const hasRotatedRect = /transform="rotate/.test(svg);
-        const circleCount    = (svg.match(/<circle/g) ?? []).length;
-        const hasLines       = /<line/.test(svg);
-        const hasArcPath     = /\bA\b/.test(svg);
-        if (hasLines)         return `SVG${i+1}: radial lines`;
-        if (hasRotatedRect)   return `SVG${i+1}: rotated rect/diamond`;
-        if (hasArcPath)       return `SVG${i+1}: arc path`;
-        if (circleCount >= 3) return `SVG${i+1}: concentric rings`;
-        return `SVG${i+1}: circles`;
-      }).join(', ');
-
+      const lineage = (currentAnswers.lineageStart as string) || '';
       const res = await fetch('/api/generate-recraft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -179,17 +167,17 @@ export default function HomePage() {
           origin:     Array.isArray(currentAnswers.origin) ? currentAnswers.origin : [profile.roots.origin],
           occupation: Array.isArray(currentAnswers.occupation) ? currentAnswers.occupation : [profile.roots.historicOccupation],
           values:     profile.values,
-          variant:    v,
-          usedShapes: isFirst ? '' : usedShapes,
+          lineage,
           language:   (currentAnswers.language as string) || '',
           initial:    (currentAnswers.initial as string) || '',
+          variant:    v,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Generation failed');
-      const newSeals = (data.seals as {variant: number; svg?: string; imageUrl?: string | null; error: string | null}[])
+      const newSeals = (data.seals as {variant: number; shape?: string; svg?: string; imageUrl?: string | null; error: string | null}[])
         .filter(s => s.svg || s.imageUrl)
-        .map(s => ({ pattern: `variant-${s.variant}`, shape: 'circle', svg: s.svg || '', imageUrl: s.imageUrl || undefined }));
+        .map(s => ({ pattern: `variant-${s.variant}`, shape: s.shape || 'circle', svg: s.svg || '', imageUrl: s.imageUrl || undefined }));
       setAllSeals(prev => isFirst ? newSeals : [...prev, ...newSeals]);
       setGenCount(prev => prev + 1);
       setPhase('results');
@@ -362,7 +350,7 @@ export default function HomePage() {
           Crafting your heritage marks...
         </p>
         <p style={{ fontSize: 13, color: C.muted, marginTop: 12, fontFamily: 'Helvetica, Arial, sans-serif' }}>
-          This takes about 30 seconds
+          Crafting 24 unique designs — this takes about 45 seconds
         </p>
         <div style={{ marginTop: 32, display: 'flex', gap: 8 }}>
           {[0,1,2].map(i => (
@@ -445,28 +433,32 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Seal grid */}
+          {/* Seal grid — 3×4 per shape view */}
           {(() => {
             const filteredSeals = seals
               .map((s, i) => ({ ...s, origIdx: i }))
               .filter(s => {
-                if (shapeFilter === 'circle') return /<circle cx="150" cy="150" r="132"/.test(s.svg);
-                if (shapeFilter === 'square') return /<rect x="18" y="18" width="264" height="264"/.test(s.svg);
+                if (shapeFilter === 'circle') return s.shape === 'circle';
+                if (shapeFilter === 'square') return s.shape === 'square';
                 return true;
               });
             return (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 8 }}>
                 {filteredSeals.map((seal) => {
                   const isSelected = chosen === seal.origIdx;
                   return (
-                    <button key={seal.origIdx} onClick={() => setChosen(isSelected ? null : seal.origIdx)}
-                      style={{ border: `2px solid ${isSelected ? C.gold : C.border}`, background: isSelected ? 'rgba(139,115,85,0.06)' : C.surface, padding: 10, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, transition: 'all 0.2s' }}>
+                    <button key={seal.origIdx}
+                      onClick={() => setPreviewIdx(seal.origIdx)}
+                      style={{ border: `2px solid ${isSelected ? C.gold : C.border}`, background: isSelected ? 'rgba(139,115,85,0.06)' : C.surface, padding: 8, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, transition: 'all 0.2s', position: 'relative' }}>
+                      {isSelected && (
+                        <span style={{ position: 'absolute', top: 4, right: 6, fontSize: 12, color: C.gold }}>✓</span>
+                      )}
                       {seal.imageUrl
-                        ? <img src={seal.imageUrl} alt={`Option ${seal.origIdx + 1}`} style={{ width: 140, height: 140, objectFit: 'contain' }} />
-                        : <div style={{ width: 140, height: 140 }} dangerouslySetInnerHTML={{ __html: seal.svg }} />
+                        ? <img src={seal.imageUrl} alt={`Option ${seal.origIdx + 1}`} style={{ width: 130, height: 130, objectFit: 'contain' }} />
+                        : <div style={{ width: 130, height: 130 }} dangerouslySetInnerHTML={{ __html: seal.svg }} />
                       }
-                      <span style={{ fontSize: 13, color: isSelected ? C.gold : C.muted, letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>
-                        {isSelected ? '✓ Selected' : `Option ${seal.origIdx + 1}`}
+                      <span style={{ fontSize: 11, color: isSelected ? C.gold : C.muted, letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+                        {isSelected ? 'Selected' : `No. ${seal.origIdx + 1}`}
                       </span>
                     </button>
                   );
@@ -627,6 +619,51 @@ export default function HomePage() {
           </div>
         </div>
       )}
+      {/* ── Master Preview Modal ──────────────────────────────────────────────── */}
+      {previewIdx !== null && (() => {
+        const previewSeal = seals[previewIdx];
+        if (!previewSeal) return null;
+        const isChosen = chosen === previewIdx;
+        return (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(28,26,23,0.8)', zIndex: 200,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+            onClick={() => setPreviewIdx(null)}>
+            <div style={{ background: C.surface, maxWidth: 400, width: '100%', padding: '36px 32px',
+              fontFamily: 'Georgia, serif', color: C.text, position: 'relative' }}
+              onClick={e => e.stopPropagation()}>
+
+              <button onClick={() => setPreviewIdx(null)}
+                style={{ position: 'absolute', top: 14, right: 18, background: 'none', border: 'none',
+                  fontSize: 22, color: C.muted, cursor: 'pointer', lineHeight: 1 }}>×</button>
+
+              <p style={{ fontSize: 13, letterSpacing: '0.25em', color: C.gold, textTransform: 'uppercase',
+                marginBottom: 20, fontFamily: 'Helvetica, Arial, sans-serif', textAlign: 'center' }}>
+                Design Preview · No. {previewIdx + 1}
+              </p>
+
+              <div style={{ width: 240, height: 240, margin: '0 auto 28px', border: `1px solid ${C.border}`, padding: 8, background: C.bg }}
+                dangerouslySetInnerHTML={{ __html: previewSeal.svg }} />
+
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => setPreviewIdx(null)}
+                  style={{ flex: 1, padding: '11px', border: `1px solid ${C.border}`, background: 'transparent',
+                    color: C.muted, fontSize: 13, letterSpacing: '0.2em', textTransform: 'uppercase',
+                    cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+                  ← Back
+                </button>
+                <button onClick={() => { setChosen(isChosen ? null : previewIdx); setPreviewIdx(null); }}
+                  style={{ flex: 2, padding: '11px', border: 'none',
+                    background: isChosen ? C.border : C.gold, color: '#fff',
+                    fontSize: 13, letterSpacing: '0.2em', textTransform: 'uppercase',
+                    cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif', fontWeight: 500 }}>
+                  {isChosen ? 'Deselect' : 'Choose This Design →'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       </>
     );
   }
