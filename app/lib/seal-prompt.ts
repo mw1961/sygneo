@@ -33,8 +33,14 @@ const SECTION_C = `MANDATORY LAYOUT — output exactly 4 SVGs:
 - SVG 3: CIRCLE border — lead with VALUES geometry, accent with origin or occupation
 - SVG 4: SQUARE border — full synthesis of all three parameters
 
-VARIETY RULE: each SVG must use a DIFFERENT primary shape family.
-If SVG 1 uses rings, SVG 2 must use rotated rects or arcs. No two SVGs share the same base motif.`;
+SHAPE VARIETY — HARD RULE, NOT A SUGGESTION:
+Each SVG MUST use a different primary SVG element as its main inner shape:
+- SVG 1 primary element: <path> with arc (A) or curve (C) command — do NOT use plain circles as the only inner shape
+- SVG 2 primary element: <rect> with transform="rotate(N 150 150)" — rotated rectangles as the dominant motif
+- SVG 3 primary element: <line> elements — at least 4 lines in radial, grid, or angular arrangement
+- SVG 4 primary element: your choice — but it MUST be visually distinct from SVGs 1, 2, and 3
+
+Violation check: if SVG 1, 2, 3, and 4 all look similar (e.g. all circle+diamond), you have failed this rule. Regenerate.`;
 
 // ── Section D: Stamp production constraints (FOUNDATIONAL — never relax) ──────
 
@@ -152,10 +158,29 @@ export const SVG_SYSTEM = [
 // ── Variety hints per batch (gentle suggestions only) ────────────────────────
 
 export const VARIETY_HINTS = [
-  `Suggested shapes: SVG1=bold arcs or Celtic spiral, SVG2=nested rotated squares, SVG3=radial tick marks around a ring, SVG4=synthesis.`,
-  `Suggested shapes: SVG1=concentric rings varied spacing, SVG2=cultural octagon or meander, SVG3=bold crescent arc, SVG4=synthesis.`,
-  `Suggested shapes: SVG1=Celtic triple arc, SVG2=double rotated squares at offset angles, SVG3=radial spokes, SVG4=synthesis.`,
-  `Suggested shapes: SVG1=single bold arc 240°, SVG2=two nested squares 0° and 45°, SVG3=8 tick marks in ring, SVG4=synthesis.`,
+  `REQUIRED SHAPES — generate EXACTLY these, no substitution:
+SVG1 MUST use <path> arcs (A command): e.g. bold 240° open arc + smaller inner arc, no circles as inner shapes.
+SVG2 MUST use <rect> with rotation: e.g. two nested squares rotated 0° and 45°, no circles.
+SVG3 MUST use <line> elements: e.g. 8 radial tick marks around a ring border, no rects as primary.
+SVG4: synthesis — combine one arc + one rotated rect, keep it distinct from SVG1/2/3.`,
+
+  `REQUIRED SHAPES — generate EXACTLY these, no substitution:
+SVG1 MUST use <path> arcs (A command): e.g. Celtic triple arc (3 concentric open arcs, staggered angles).
+SVG2 MUST use <rect> with rotation: e.g. octagon-like arrangement of 4 small rects at 0°/45°/90°/135°.
+SVG3 MUST use <line> elements: e.g. 6 diagonal lines arranged in two groups of 3, radial or grid pattern.
+SVG4: synthesis — one circle ring + one bold inner path arc, distinct from SVG1/2/3.`,
+
+  `REQUIRED SHAPES — generate EXACTLY these, no substitution:
+SVG1 MUST use <path> arcs (A command): e.g. two bold arcs facing each other (open top and bottom).
+SVG2 MUST use <rect> with rotation: e.g. three nested squares at 0°, 22°, 45° forming a layered pattern.
+SVG3 MUST use <line> elements: e.g. 8 spoke lines from r=50 to r=90, evenly spaced, around center.
+SVG4: synthesis — concentric circles (2 rings) + one bold rotated rect inside, distinct from SVG1/2/3.`,
+
+  `REQUIRED SHAPES — generate EXACTLY these, no substitution:
+SVG1 MUST use <path> arcs (A command): e.g. single wide arc 270° as outer ring + small inner arc 180°.
+SVG2 MUST use <rect> with rotation: e.g. single large square rotated 45° inside the border (diamond).
+SVG3 MUST use <line> elements: e.g. 4 pairs of parallel lines forming a grid-cross (not through center).
+SVG4: synthesis — one arc path + one circle ring, meeting in the center visually, distinct from SVG1/2/3.`,
 ];
 
 /*  ARCHIVED STYLES — preserved, may be re-enabled:

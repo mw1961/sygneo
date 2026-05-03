@@ -106,7 +106,7 @@ function validateSvg(svg: string, i: number): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { origin, occupation, values, variant = 0, usedShapes = '' } = await request.json();
+    const { origin, occupation, values, variant = 0, usedShapes = '', language = '', initial = '' } = await request.json();
 
     const originStr     = Array.isArray(origin)     ? origin.join(', ')     : origin;
     const occupationStr = Array.isArray(occupation) ? occupation.join(', ') : occupation;
@@ -115,13 +115,15 @@ export async function POST(request: NextRequest) {
     const varietyHint = VARIETY_HINTS[variant % VARIETY_HINTS.length];
     const avoidLine   = usedShapes ? `\nPrevious batch used: ${usedShapes} — use different shapes.` : '';
 
+    const systemWithHint = SVG_SYSTEM + `\n\n── BATCH SHAPE MANDATE ──\n${varietyHint}`;
+
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 7000,
-      system: SVG_SYSTEM,
+      system: systemWithHint,
       messages: [{
         role: 'user',
-        content: `Origin: ${originStr}\nOccupation: ${occupationStr}\nValues: ${valuesStr}${avoidLine}\n\n${varietyHint}`,
+        content: `Origin: ${originStr}\nOccupation: ${occupationStr}\nValues: ${valuesStr}${initial ? `\nFamily Initial: "${initial}" (Script: ${language || 'Latin'})` : ''}${avoidLine}`,
       }],
     });
 

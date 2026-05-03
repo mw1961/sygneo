@@ -34,7 +34,8 @@ const COLORS = [
   { label: 'Forest Green', value: '#1B4332', hex: '#1B4332' },
 ];
 
-type Phase = 'questionnaire' | 'generating' | 'results' | 'confirmed';
+type Phase = 'questionnaire' | 'confirming' | 'generating' | 'results' | 'confirmed';
+type ShapeFilter = 'all' | 'circle' | 'square';
 
 interface SealOption {
   pattern:  string;
@@ -101,6 +102,7 @@ export default function HomePage() {
   const [generating, setGenerating]           = useState(false);
   const [elapsed, setElapsed]                 = useState(0);
   const [genCount, setGenCount]               = useState(0);
+  const [shapeFilter, setShapeFilter]         = useState<ShapeFilter>('all');
   const [showModal, setShowModal]             = useState(false);
   const [shipping, setShipping]               = useState<Record<string, string>>({
     recipientName: '', country: '', street: '', streetNumber: '',
@@ -179,6 +181,8 @@ export default function HomePage() {
           values:     profile.values,
           variant:    v,
           usedShapes: isFirst ? '' : usedShapes,
+          language:   (currentAnswers.language as string) || '',
+          initial:    (currentAnswers.initial as string) || '',
         }),
       });
       const data = await res.json();
@@ -213,10 +217,7 @@ export default function HomePage() {
     setCustomPending('');
 
     if (isLastStep) {
-      setVariant(0);
-      setAllSeals([]);
-      setChosen(null);
-      await fetchMoreSeals(updated, 0, true);
+      setPhase('confirming');
     } else {
       setStep(s => s + 1);
     }
@@ -286,6 +287,69 @@ export default function HomePage() {
     setPhase('questionnaire'); setAllSeals([]); setChosen(null); setNotes('');
     setError(''); setSavedId(''); setColor('#000000');
     setCustomInput(''); setCustomPending(''); setVariant(0); setGenCount(0);
+    setShapeFilter('all');
+  }
+
+  // ── Confirming ──────────────────────────────────────────────────────────────
+  if (phase === 'confirming') {
+    const familyInitial = ((answers.initial as string) || '').trim().slice(0, 4) || '?';
+    const language      = (answers.language as string) || '';
+    const origins       = (Array.isArray(answers.origin) ? answers.origin : [answers.origin]).filter(Boolean) as string[];
+    const occupations   = (Array.isArray(answers.occupation) ? answers.occupation : [answers.occupation]).filter(Boolean) as string[];
+    const vals          = (Array.isArray(answers.values) ? answers.values : [answers.values]).filter(Boolean) as string[];
+
+    async function handleGenerateFromConfirm() {
+      setVariant(0); setAllSeals([]); setChosen(null);
+      await fetchMoreSeals(answers, 0, true);
+    }
+
+    return (
+      <main style={{ minHeight: '100vh', background: C.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 24px', fontFamily: 'Georgia, serif', color: C.text }}>
+        <h1 style={{ fontSize: 36, fontWeight: 300, letterSpacing: '0.45em', margin: 0 }}>SYGNEO</h1>
+        <div style={{ width: 40, height: 1, background: C.gold, margin: '12px auto 32px' }} />
+
+        <div style={{ maxWidth: 480, width: '100%', textAlign: 'center' }}>
+          <p style={{ fontSize: 13, letterSpacing: '0.3em', color: C.gold, textTransform: 'uppercase', marginBottom: 28, fontFamily: 'Helvetica, Arial, sans-serif' }}>
+            Confirm Your Heritage Profile
+          </p>
+
+          {/* Initial preview */}
+          <div style={{ border: `1px solid ${C.border}`, background: C.surface, padding: '36px 24px', marginBottom: 24 }}>
+            <div style={{ fontSize: 96, lineHeight: 1, marginBottom: 12, color: C.text, fontFamily: 'Georgia, serif' }}>
+              {familyInitial}
+            </div>
+            <p style={{ fontSize: 13, color: C.muted, letterSpacing: '0.2em', textTransform: 'uppercase', margin: 0, fontFamily: 'Helvetica, Arial, sans-serif' }}>
+              {language || 'Latin script'}
+            </p>
+          </div>
+
+          {/* Profile summary */}
+          <div style={{ border: `1px solid ${C.border}`, padding: '4px 24px', marginBottom: 32, textAlign: 'left' }}>
+            {[
+              { label: 'Origin',      value: origins.join(', ') },
+              { label: 'Occupation',  value: occupations.join(', ') },
+              { label: 'Values',      value: vals.join(', ') },
+            ].map(({ label, value }) => (
+              <div key={label} style={{ display: 'flex', gap: 16, padding: '12px 0', borderBottom: `1px solid ${C.border}` }}>
+                <span style={{ fontSize: 13, color: C.muted, letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif', width: 100, flexShrink: 0 }}>{label}</span>
+                <span style={{ fontSize: 15, color: C.text }}>{value}</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+            <button onClick={() => { setStep(QUESTIONS.length - 1); setPhase('questionnaire'); }}
+              style={{ padding: '10px 24px', border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, fontSize: 13, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+              ← Edit
+            </button>
+            <button onClick={handleGenerateFromConfirm}
+              style={{ padding: '13px 36px', border: 'none', background: C.gold, color: '#fff', fontSize: 15, letterSpacing: '0.28em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif', fontWeight: 500 }}>
+              Generate My Seal →
+            </button>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   // ── Generating ──────────────────────────────────────────────────────────────
@@ -350,13 +414,23 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Ink color */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <span style={{ fontSize: 15, letterSpacing: '0.25em', color: C.muted, textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>Ink</span>
-            {COLORS.map(c => (
-              <button key={c.value} onClick={() => handleColorChange(c.value)} title={c.label}
-                style={{ width: 24, height: 24, borderRadius: '50%', background: c.hex, border: color === c.value ? `3px solid ${C.gold}` : `2px solid ${C.border}`, cursor: 'pointer', outline: 'none', transition: 'border 0.2s' }} />
-            ))}
+          {/* Ink color + Shape filter */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 13, letterSpacing: '0.25em', color: C.muted, textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>Ink</span>
+              {COLORS.map(c => (
+                <button key={c.value} onClick={() => handleColorChange(c.value)} title={c.label}
+                  style={{ width: 22, height: 22, borderRadius: '50%', background: c.hex, border: color === c.value ? `3px solid ${C.gold}` : `2px solid ${C.border}`, cursor: 'pointer', outline: 'none', transition: 'border 0.2s' }} />
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              {(['all', 'circle', 'square'] as ShapeFilter[]).map(f => (
+                <button key={f} onClick={() => setShapeFilter(f)}
+                  style={{ padding: '5px 14px', border: `1px solid ${shapeFilter === f ? C.gold : C.border}`, background: shapeFilter === f ? 'rgba(139,115,85,0.08)' : 'transparent', color: shapeFilter === f ? C.gold : C.muted, fontSize: 13, letterSpacing: '0.15em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif', transition: 'all 0.2s' }}>
+                  {f === 'all' ? 'All' : f === 'circle' ? '○ Circle' : '□ Square'}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Loading indicator */}
@@ -371,24 +445,35 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Seal grid — 3 columns: circles | squares | maze */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 8 }}>
-            {seals.map((seal, idx) => {
-              const isSelected = chosen === idx;
-              return (
-                <button key={idx} onClick={() => setChosen(isSelected ? null : idx)}
-                  style={{ border: `2px solid ${isSelected ? C.gold : C.border}`, background: isSelected ? 'rgba(139,115,85,0.06)' : C.surface, padding: 10, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, transition: 'all 0.2s' }}>
-                  {seal.imageUrl
-                    ? <img src={seal.imageUrl} alt={`Option ${idx + 1}`} style={{ width: 140, height: 140, objectFit: 'contain' }} />
-                    : <div style={{ width: 140, height: 140 }} dangerouslySetInnerHTML={{ __html: seal.svg }} />
-                  }
-                  <span style={{ fontSize: 13, color: isSelected ? C.gold : C.muted, letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>
-                    {isSelected ? '✓ Selected' : `Option ${idx + 1}`}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          {/* Seal grid */}
+          {(() => {
+            const filteredSeals = seals
+              .map((s, i) => ({ ...s, origIdx: i }))
+              .filter(s => {
+                if (shapeFilter === 'circle') return /<circle cx="150" cy="150" r="132"/.test(s.svg);
+                if (shapeFilter === 'square') return /<rect x="18" y="18" width="264" height="264"/.test(s.svg);
+                return true;
+              });
+            return (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 8 }}>
+                {filteredSeals.map((seal) => {
+                  const isSelected = chosen === seal.origIdx;
+                  return (
+                    <button key={seal.origIdx} onClick={() => setChosen(isSelected ? null : seal.origIdx)}
+                      style={{ border: `2px solid ${isSelected ? C.gold : C.border}`, background: isSelected ? 'rgba(139,115,85,0.06)' : C.surface, padding: 10, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, transition: 'all 0.2s' }}>
+                      {seal.imageUrl
+                        ? <img src={seal.imageUrl} alt={`Option ${seal.origIdx + 1}`} style={{ width: 140, height: 140, objectFit: 'contain' }} />
+                        : <div style={{ width: 140, height: 140 }} dangerouslySetInnerHTML={{ __html: seal.svg }} />
+                      }
+                      <span style={{ fontSize: 13, color: isSelected ? C.gold : C.muted, letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+                        {isSelected ? '✓ Selected' : `Option ${seal.origIdx + 1}`}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           {/* Notes + Confirm */}
           {chosen !== null && (
@@ -571,10 +656,12 @@ export default function HomePage() {
         <p style={{ fontSize: 15, color: C.sub, marginBottom: 36, lineHeight: 1.6 }}>{question?.hint}</p>
 
         {question?.type === 'text' && (
-          <input type="text" value={currentText} onChange={e => setCurrentText(e.target.value)}
+          <input type="text" value={currentText}
+            onChange={e => setCurrentText(question?.id === 'initial' ? e.target.value.slice(0, 4) : e.target.value)}
             onKeyDown={e => e.key === 'Enter' && canProceed && handleNext()}
-            placeholder="Your answer..." autoFocus
-            style={{ width: '100%', background: 'transparent', border: 'none', borderBottom: `1px solid ${C.border}`, color: C.text, fontSize: 18, paddingBottom: 12, outline: 'none', fontFamily: 'Georgia, serif', boxSizing: 'border-box' }}
+            placeholder={question?.id === 'initial' ? 'e.g. A, מ, ا, Α...' : 'Your answer...'}
+            autoFocus
+            style={{ width: '100%', background: 'transparent', border: 'none', borderBottom: `1px solid ${C.border}`, color: C.text, fontSize: question?.id === 'initial' ? 48 : 18, paddingBottom: 12, outline: 'none', fontFamily: 'Georgia, serif', boxSizing: 'border-box', textAlign: question?.id === 'initial' ? 'center' : 'left' }}
             onFocus={e => e.target.style.borderBottomColor = C.gold}
             onBlur={e => e.target.style.borderBottomColor = C.border} />
         )}
